@@ -16,85 +16,45 @@ and find page 23 where the description of the first feature can be found.
 
 ## Continue with the Breakfast Coding
 
-### Findings from the implementation of the initial feature
+### Findings from the implementation of the previous feature
 
 This section is about reflecting over the code as it is now, looking at the implemented feature.
 Furthermore looking back at the experiences you had during the implementation.
-Please comment if you experienced other things during you implementation of the "Add English Greeting" feature.  
+Please comment if you experienced other things during you implementation of the "Add Greeting Details" feature.
 
-Did you break the existing consumer expectations already, by changing the default response from Danish to English (although that would make more sense in a real world example) - Danish was chosen exactly for these reasons and to show how easy it
-is to break the "contract".
+The CORS filter was added to the example as well as the build now includes assembly of an uber-jar, which can be used for packaging the service into docker or just run as a jar file without further overhead.
 
-Did you experience CORS problems?
-- perhaps you added a CORS filter like the one below...
+Note that the Original getGreetings was deprecated, but is still working in order to keep consumers of that version happy. Deprecation signals that this version of the endpoint will be terminated at some point in time.
 
-```java
-    /**
-    * a general CORS filter that allows everything from *
-    */
-    public class CORSFilter implements ContainerResponseFilter {
+The code now contains a [versionable edition](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/Greeting.java#L202) for greetings/{greeting}. The versioning uses content based versioning this is a minor investment in the future for this service, handling of unsupported media-types using [getOrDefault(...)](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/Greeting.java#L99). Supported versions are determined in the [construction of the service](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/Greeting.java#L26)
 
-       public void filter(ContainerRequestContext requestContext, 
-                          ContainerResponseContext responseContext) throws IOException {
-           MultivaluedMap<String, Object> headers = responseContext.getHeaders();
-           headers.add("Access-Control-Allow-Origin", "*");
-           headers.add("Access-Control-Allow-Methods", 
-                               "GET, POST, DELETE, PUT, PATCH, OPTIONS, HEAD");
-           headers.add("Access-Control-Allow-Headers", 
-                               "Content-Type, Authorization, If-Match, If-None-Match, "
-           // default are: Accept, Accept-Language, Content-Language, Content-Type(subset only)
-                   + "X-Log-Token, X-Client-Version, X-Client-ID, X-Service-Generation, X-Requested-With, X-Client-Id");
-           headers.add("Access-Control-Expose-Headers", "Location, Retry-After, Content-Encoding, "
-                   + "ETag, "
-                   // default exposes are: Cache-Control, Content-Language, Content-type, Expires, Last-Modified, Pragma
-                   // according to https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
-                   + "X-Log-Token, "
-                   + "X-RateLimit-Limit, X-RateLimit-Limit24h, X-RateLimit-Remaining, X-RateLimit-Reset");
-       }
-    }
+Btw. what do you think about the use `application/json` for the resources in the current implementation of 
 
-```
-and registered that in the ServiceExecutor as
+    /greetings 
+                            
+	/greetings/{greeting}
 
-```java
-    ResourceConfig rc = new ResourceConfig()
-                   .packages("com.example")
-                   .register(CORSFilter.class);
-```
-If your did not experience any CORS problems - don't worry just continue, a CORS
-filter will be added to the example later. 
+Where is it appropriate to use `application/hateoas+json` and where would `application/hal+json` be a better fit?
 
-The “Accept-Language” header was used for implementation of a users preferred language and the format is specified in 
-[RFC2616 section 14.4](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html)
- 
-What was your style of implementation “Not Invented Here Syndrome/“aka me” or 
-did you use the Local.LanguageRange.parse() or something different.
+It seems that `application/json` would be useful to _greetings_ and _greetings/{greeting}_, whereas `application/hateoas+json` would be useful and correct for the list containing greetings.
 
-```java
-    String[] languages = preferred.split(",");
-    String[] preferredLanguage = Arrays.stream(languages).filter(s ->!s.contains(";")).toArray(String[]::new);
-    return preferredLanguage[0];
-```
+The `application/json`is not problematic from a content point of view for the _greetings_ resource, but it seems to be from a semantic point of view, the semantics of that endpoint are dubious. 
 
-or
+The use of `application/hal+json`at the _greeting/{greeting}_ resource is wrong from a content-type perspective, but not from an `application/json` or `application/hateoas+json` perspective.  
 
-```java
-    return Locale.LanguageRange.parse(preferred).stream().map(rang‌​e -> new Locale(range.getRange()))
-    .collect(Collectors.toList()).get(0).getLanguage();
-```
 
-### The Feature "Add Greeting Details" - see slides page 28+
+### The Feature "Add Language Details" - see slides page 35+
 
-The greeting list actually returns a list of greetings for consumers accepting "application/hal+json" and the greetings themselves are detailed and made an explicit resource.
+The greeting list continues to return a list of greetings for consumers accepting "application/hal+json" and the greetings themselves remains detailed as explicit resources.
 
-A concrete greeting must include details on country, e.g. language and country code [ISO2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2).
+A concrete greeting must include the name of the country. Furthermore it needs to include a native part for the consumer, which states the language and country in consumers own language.
 
-The service endpoint is extended with an explicit greeting, e.g. endpoints
+The service endpoint is greetings/{greeting} as the endpoints shown below
 
     /greetings/hello
-	/greetings/hallo
+    /greetings/hallo
     
-The response must contain text for the UI in language specified in the Accept-Language header, however only supporting Danish and English currently.
+The response must contain text for the UI in language specified in the Accept-Language header as well as the native part on country and language, however only supporting Danish and English currently.
 
 #### Examples
 
@@ -130,7 +90,12 @@ The Greeting resource.
 An http GET greetings/hello having Accept-Language header set to "en" would return
 {
     "greeting": "Hello!",
-    "country": "GB",
+    "language": "English",
+    "country": "England",
+    "native": {
+        "language": "English",
+        "country": "England"
+    },
     "_links": {
         "href": "/greetings/hello",
         "title": "English Greeting Hello"
@@ -142,10 +107,15 @@ An http GET greetings/hello having Accept-Language header set to "en" would retu
 An http GET greetings/hello having Accept-Language header set to "da" would return
 {
     "greeting": "Hello!",
-    "country": "GB",
+    "language": "English",
+    "country": "England",
+    "native": {
+        "language": "Engelsk",
+        "country": "England"
+    },
     "_links": {
         "href": "/greetings/hello",
-        "title": "Engelsk Hilsen Hello"  
+        "title": "Engelsk Hilsen Hello"
     }
 }
 
@@ -155,7 +125,12 @@ An http GET greetings/hello having Accept-Language header set to "da" would retu
 An http GET greetings/hallo having Accept-Language header set to "en" would return
 {
     "greeting": "Hallo!",
-    "country": "DK",
+    "language": "Dansk",
+    "country": "Danmark",
+    "native": {
+        "language": "Danish",
+        "country": "Denmark"
+    },
     "_links": {
         "href": "/greetings/hallo",
         "title": "Danish Greeting Hallo"
@@ -167,24 +142,54 @@ An http GET greetings/hallo having Accept-Language header set to "en" would retu
 An http GET greetings/hallo having Accept-Language header set to "da" would return
 {
     "greeting": "Hallo!",
-    "country": "DK",
+    "language": "Dansk",
+    "country": "Danmark",
+    "native": {
+        "language": "Dansk",
+        "country": "Danmark"
+    },
     "_links": {
         "href": "/greetings/hallo",
         "title": "Dansk Hilsen Hallo"
     }
 }
-
 ````
 
 # greeting-rest-service
 
 ## Introduction
+
 A simple rest service that is developed towards being able to greet you in a 
 number of languages. Currently it will only greet you with a "Hallo" which is
-the Danish, Swedish or Norwegian way to say "Hello".
+the Danish, Swedish or Norwegian way to say "Hello". Currently it is perceived
+as a Danish greeting and the only supported greetings are Danish and English.
 
+## Worth Noticing
+
+The initial resource "/greetings" is now only supported using a 
+  
+    application/json
+
+content-type, where the more semantical correct "/greetings" is supported for
+a period of time for compliancy by setting the Accept header to 
+
+    application/hal+json
+
+This is mainly done to show how coexistence thus moving along is possible. 
+Furthermore the resource "/greetings/{greeting}" is now made with the content
+version scheme using "application/hal+json" as producer content-type and 
+showing how to use the actual version of content. 
+
+    application/hal+json;concept=greeting;v=1
+
+if a consumer has the need to go back to that version, once a version 2 e.g. 
+
+    application/hal+json;concept=greeting;v=2
+
+is created in a near future.
 
 ## Working with the service
+
 Underneath there are a collection of useful things to work with using the 
 example.
 
@@ -206,7 +211,7 @@ To run the REST Server standalone:
 To test the REST service use e.g. Postman:
     
     GET http://localhost:8080/greetings
-
+    having set Accept "application/json"
     and get a response 200 OK back, with 
      - Headers 
           content-length: 21
@@ -217,7 +222,7 @@ To test the REST service use e.g. Postman:
 To test the REST service greeting in English:
 
     GET http://localhost:8080/greetings
-    having set Accept-Language "en"
+    having set Accept-Language "en" and Accept "application/json"
 
     and get a response 200 OK back, with 
      - Headers 
@@ -226,3 +231,121 @@ To test the REST service greeting in English:
      - Body:
             { "greeting": "Hello!" }
 
+To test the REST service greeting List:
+
+    GET http://localhost:8080/greetings
+    having set Accept "application/hal+json"
+
+    and get a response 200 OK back, with 
+     - Headers 
+          content-length: 458
+          content-type: application/hal+json
+     - Body:
+        {
+            "greetings": {
+                "info": "a list containing current greetings",
+                "_links": {
+                    "self": {
+                        "href": "/greetings",
+                        "type": "application/hal+json;concept=greeetinglist;v=1",
+                        "title": "List of Greetings"
+                    },
+                    "greetings": [
+                        {
+                            "href": "/greetings/hallo",
+                            "title": "Danish Greeting - Hallo"
+                        },
+                        {
+                            "href": "/greetings/hello",
+                            "title": "English Greeting - Hello"
+                        }
+                    ]
+                }
+            }
+        }
+
+To test the REST service greetings `hello` resource in English:
+
+    GET http://localhost:8080/greetings/hello
+    having set Accept-Language "en" and Accept "application/hal+json"
+
+    and get a response 200 OK back, with 
+     - Headers 
+          content-length: 127
+          content-type: application/hal+json;concept=greeting;v=1
+     - Body:
+        {
+            "greeting": "Hello!",
+            "country": "GB",
+            "_links": {
+                "href": "/greetings/hello",
+                "title": "English Greeting Hallo"
+            }
+        }
+
+To test the REST service greetings `hello` resource in Danish:
+
+    GET http://localhost:8080/greetings/hello
+    having set Accept-Language "da" and Accept "application/hal+json"
+
+    and get a response 200 OK back, with 
+     - Headers 
+          content-length: 125
+          content-type: application/hal+json;concept=greeting;v=1
+     - Body:
+        {
+            "greeting": "Hello!",
+            "country": "GB",
+            "_links": {
+                "href": "/greetings/hello",
+                "title": "Engelsk Hilsen Hello"
+            }
+        }
+
+To test the REST service greetings `hallo` resource in English:
+
+    GET http://localhost:8080/greetings/hallo
+    having set Accept-Language "en" and Accept "application/hal+json"
+
+    and get a response 200 OK back, with 
+     - Headers 
+          content-length: 126
+          content-type: application/hal+json;concept=greeting;v=1
+     - Body:
+        {
+            "greeting": "Hallo!",
+            "country": "DK",
+            "_links": {
+                "href": "/greetings/hallo",
+                "title": "Danish Greeting Hallo"
+            }
+        }
+
+To test the REST service greetings `hallo` resource in Danish:
+
+    GET http://localhost:8080/greetings/hallo
+    having set Accept-Language "da" and Accept "application/hal+json"
+
+    and get a response 200 OK back, with 
+     - Headers 
+          content-length: 123
+          content-type: application/hal+json;concept=greeting;v=1
+     - Body:
+        {
+            "greeting": "Hallo!",
+            "country": "DK",
+            "_links": {
+                "href": "/greetings/hallo",
+                "title": "Dansk Hilsen Hallo"
+            }
+		}
+
+## Packaging an uber-jar
+
+A fat jar containing all dependencies is created during the package phase of the build. 
+
+To run the uber-jar:
+
+    java -jar target/shaded-greeting-rest-service-1.0-SNAPSHOT.jar
+    
+    

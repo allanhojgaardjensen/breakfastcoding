@@ -203,7 +203,7 @@
         <module name="UpperEll" />
 
         <module name="LineLength">
-            <property name="max" value="144" />
+            <property name="max" value="180" />
         </module>
         <module name="MethodLength">
             <property name="countEmpty" value="false" />

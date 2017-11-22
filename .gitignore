@@ -3,4 +3,4 @@
 .settings
 .project
 nb-configuration.xml
-
+dependency-reduced-pom.xml

@@ -8,13 +8,26 @@
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
     <name>greeting-rest-service</name>
-
+    <description>
+        The Greeting REST service is a very simple example that serves two purposes.
+        The first is to work in relation with hands-on workshops for development of
+        simple REST services, the other purpose is to develop into being a part of 
+        a turnkey solution, where this in its final state will be an example REST 
+        service. 
+    </description>
+    <url>
+        https://github.com/allanhojgaardjensen/breakfastcoding
+    </url>
     <properties>
         <jersey.version>2.26-b09</jersey.version>
         <junit.version>4.12</junit.version>
         <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <checkstyle.version>7.8.2</checkstyle.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <dependency.locations.enabled>false</dependency.locations.enabled>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.info.reportsplugin.version>2.9</project.info.reportsplugin.version>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencyManagement>
@@ -113,6 +126,35 @@
                 <artifactId>maven-jxr-plugin</artifactId>
                 <version>2.5</version>
             </plugin>       
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>shaded-${project.artifactId}-${project.version}</finalName>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>junit:junit</exclude>
+                                    <exclude>log4j:log4j:jar:</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Main-Class>com.example.ServiceExecutor</Main-Class>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <reporting>
@@ -123,6 +165,14 @@
                 <version>${checkstyle.plugin.version}</version>
                 <configuration>
                     <configLocation>config/checks.xml</configLocation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>${project.info.reportsplugin.version}</version>
+                <configuration>
+                    <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
                 </configuration>
             </plugin>
             <plugin>
