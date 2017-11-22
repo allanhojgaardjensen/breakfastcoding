@@ -33,4 +33,46 @@ public class GreetingTest {
         String responseMsg = target.path("greetings").request().get(String.class);
         assertEquals("{\"greeting\":\"Hallo!\"}", responseMsg);
     }
+
+    @Test
+    public void testGetNoFrenchGreeting() {
+        String responseMsg = target.path("greetings").request().acceptLanguage("fr").get(String.class);
+        assertEquals("{\"greeting\":\"Hallo!\"}", responseMsg);
+    }
+
+    @Test
+    public void testGetPreferredGreetingDanish() {
+        String responseMsg = target.path("greetings").request().acceptLanguage("da, en-gb;q=0.9, en;q=0.8, fr;q=0.5").get(String.class);
+        assertEquals("{\"greeting\":\"Hallo!\"}", responseMsg);
+    }
+
+    @Test
+    public void testGetPreferredGreetingEnglish() {
+        String responseMsg = target.path("greetings").request().acceptLanguage("en, da;q=0.9, en-gb;q=0.8, fr;q=0.5").get(String.class);
+        assertEquals("{\"greeting\":\"Hello!\"}", responseMsg);
+    }
+
+    @Test
+    public void testGetPreferredGreetingDanishEnglish() {
+        String responseMsg = target.path("greetings").request().acceptLanguage("da, en, da;q=0.9, en-gb;q=0.8, fr;q=0.5").get(String.class);
+        assertEquals("{\"greeting\":\"Hallo!\"}", responseMsg);
+    }
+
+    @Test
+    public void testGetPreferredGreetingEnglishDanish() {
+        String responseMsg = target.path("greetings").request().acceptLanguage("en, da, da;q=0.9, en-gb;q=0.8, fr;q=0.5").get(String.class);
+        assertEquals("{\"greeting\":\"Hello!\"}", responseMsg);
+    }
+
+    @Test
+    public void testGetEnglishGreeting() {
+        String responseMsg = target.path("greetings").request().acceptLanguage("en").get(String.class);
+        assertEquals("{\"greeting\":\"Hello!\"}", responseMsg);
+    }
+
+    @Test
+    public void testGetEnglishGreetingByBritish() {
+        String responseMsg = target.path("greetings").request().acceptLanguage("en-gb").get(String.class);
+        assertEquals("{\"greeting\":\"Hello!\"}", responseMsg);
+    }
 }
