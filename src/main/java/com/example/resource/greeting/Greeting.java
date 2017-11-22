@@ -14,10 +14,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+
 /**
  * Greetings Resource handles greetings in Danish and English.
  */
 @Path("greetings")
+@Api(value = "/greetings", tags = {"greetings"})
 public class Greeting {
 
     private static final Logger LOGGER = Logger.getLogger(Greeting.class.getName());
@@ -33,11 +37,25 @@ public class Greeting {
     /**
      * Method handling HTTP GET requests.
      *
+     * @param acceptLanguage the preferred language
+     * @param accept the accepted response format
      * @return String that will be returned containing "application/hal+json".
      */
     @GET
-    @Produces({"application/hal+json"})
-    public Response getGreetingsList() {
+    @Produces({"application/hal+json", "application/json"})
+    @ApiOperation(value = "list all greetings"
+            + " (the use of application/json is deprecated and will give the old greetings response)", response = String.class)
+    public Response getGreetingsList(@HeaderParam("Accept-Language")
+            @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
+            @HeaderParam("Accept") String accept) {
+
+        if ("application/json".equalsIgnoreCase(accept)) {
+            String language = preferredLanguage(acceptLanguage);
+            if (language.contains("en")) {
+                return Response.ok("{\"greeting\":\"Hello!\"}").build();
+            }
+            return Response.ok("{\"greeting\":\"Hallo!\"}").build();
+        }
         final String greetingList
                 = "{"
                 + "\"greetings\": {"
@@ -65,26 +83,6 @@ public class Greeting {
     /**
      * Method handling HTTP GET requests.
      *
-     * @param acceptLanguage client can set the preferred preferredLanguage(s) as in HTTP spec.
-     * @deprecated this method will be removed over time in favor of the more semantically correct getGreetings.
-     * @return String that will be returned containing "application/json".
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Deprecated
-    public String getGreeting(@HeaderParam("Accept-Language")
-            @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") 
-            String acceptLanguage) {
-        String language = preferredLanguage(acceptLanguage);
-        if (language.contains("en")) {
-            return "{\"greeting\":\"Hello!\"}";
-        }
-        return "{\"greeting\":\"Hallo!\"}";
-    }
-
-    /**
-     * Method handling HTTP GET requests.
-     *
      * @param accept the chosen accepted content-type by consumer
      * @param acceptLanguage client can set the preferred preferredLanguage(s) as in HTTP spec.
      * @param greeting the greeting wanted by consumer
@@ -93,6 +91,7 @@ public class Greeting {
     @GET
     @Path("{greeting}")
     @Produces({"application/hal+json"})
+    @ApiOperation(value = "get a greeting back with a preferred language portion included", response = String.class)
     public Response getGreeting(
             @HeaderParam("Accept") String accept,
             @HeaderParam("Accept-Language") @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
@@ -139,6 +138,7 @@ public class Greeting {
                         .build();
         }
     }
+
     /**
      * Implements version one of the greeting service, where detailed information needs to be handled and returned to consumer, this
      * construction using interface and explicitly mapping content-types to methods allows to maintain multiple content versions in same service
@@ -258,7 +258,7 @@ public class Greeting {
                     + "}";
         }
     }
-    
+
     private String getDanish(String language) {
         if (language.contains("en")) {
             return "{"
@@ -278,7 +278,7 @@ public class Greeting {
                     + "    \"title\": \"Dansk Hilsen Hallo\""
                     + "  }"
                     + "}";
-        }   
+        }
     }
 
     private String getEnglish(String language) {

@@ -4,14 +4,27 @@ import java.net.URI;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.ws.rs.ApplicationPath;
+
 import com.example.filter.CORSFilter;
+import io.swagger.annotations.SwaggerDefinition;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
 
 /**
- * ServiceExecutor - allows execution using 'mvn exec:java' 
+ * ServiceExecutor - allows execution using 'mvn exec:java@start-server' 
  */
+@SwaggerDefinition(
+        host = "greetings.services.example.com",
+        basePath = "/",
+        produces = "application/hal+json",
+        consumes = "application/json",
+        schemes = SwaggerDefinition.Scheme.HTTPS
+)
+
+
+@ApplicationPath("/")
 public class ServiceExecutor {
     // Base URI the Grizzly HTTP server will listen on
     public static final String BASE_URI = "http://localhost:8080/";

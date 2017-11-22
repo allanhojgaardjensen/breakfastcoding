@@ -198,7 +198,7 @@
 
         <module name="ArrayTypeStyle" />
         <module name="UncommentedMain">
-            <property name= "excludedClasses" value="\.ServiceExecutor$" />
+            <property name= "excludedClasses" value="\.ServiceExecutor$|\.APIDocsGenerator$" />
         </module>
         <module name="UpperEll" />
 

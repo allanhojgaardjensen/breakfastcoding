@@ -20,52 +20,57 @@ and find page 23 where the description of the first feature can be found.
 
 This section is about reflecting over the code as it is now, looking at the implemented feature.
 Furthermore looking back at the experiences you had during the implementation.
-Please comment if you experienced other things during your implementation of the "Add Language Details" feature.
+Please comment if you experienced other things during your implementation of the "Add API Documentation" feature.
 
 The structure of the service has improved, the different parts has been mad explicit in the code.
-The resource is now separate, the service itself and the filter is separated.
+A package for the rudimentary API doc generation has been added.     
+
+The Open API specification in this initial edition can be found in the target/api folder.
+The YAML file can be opened in editor.swagger.io and apiary.io and the API viewed there.
+
+Annotations like e.g. ApiOperation etc. has been added to the code.
+A service API specification was generated as a part of the build.
+The documentation can now be viewed in the swagger editor and apiary, they both support the OpenAPI. 
+
+
+The API will have a version that follows the code and could be deployed as a part of an service catalogue 
+having a service catalogue client that can view the code, deliver endpoints for “try it”, and links to 
+subscriptions, contracts  etc. That application is promoted using every normal means for promoting 
+applications such as SEO to make your service rank well, when potential consumers are searching for services 
+they can build their business on top off.
+
+If you have done the implementation using swagger annotations directly in the code, 
+you may have used quite some space in the Greeting resource and that may clutter 
+the development experience.
+The development speed of the service is important and the complexity should not 
+be within the documentation of the service, that should be with the services and 
+the ability to allow for individual consumers to catch up on service content 
+versions in their own pace. 
 
 Note that the Original getGreetings is still working in order to keep consumers of that version happy. 
-
-The code now contains two versions of the greetings/{greeting} resource. We created a new version, why did we have to do that?
-Looking at the requirements given by feature it did stay within open-close (open for extension, close for changes).
-So what happened - a string was allowed to be longer than 2 (ISO-2 Country code -> Name of Country) and adding native object.
-If you are in full control of consumers you may know that this longer string does not cause a problem, 
-if you have a diverse set of consumers it is difficult to know that one of these consumer's UI has a problem coping with information longer than 2 characters for language.
-Introducing the new version allows consumers to follow the newest version (using the Accept set to "application/hal+json"), where consumers experiencing
-problems with the longer can revert to the previous version (using the Accept set to "application/hal+json;concept=greeting;v=1").
-
-This may prove important as it allows for a service to evolve as fast as needed, without forcing all consumers to upgrade at the same time.
-
-[The endpoint is the same](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L96) 
-the implementation of [version 1](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L112)
- and [version 2](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L151) are separated in the the service, however addressed from the one and the same endpoint. 
-The setup for greetings/{greeting} is handled by internal routing using the 
-[getOrDefault(...)](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L100). 
-and the supported versions are determined in the 
-[construction of the service](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L26)
-The content based versioning is a minor investment in the future for this service and the initial example of that is seen here.
-
-As you can see from the example tests using postman, you can see that version 2 is now default 
-and it is possible for the consumers using version to do an instant "roll-back" to version 1 by 
-changing the Accept header to contain "application/hal+json;concept=greeting;v=1"
-
-Why is [getGreetingG1V1](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L112) 
-which implements version 1 of service endpoint for _greetings/{greeting}_ not deprecated yet? - the reason for that is it is possible to 
-work with multiple active versions and thus it is perfectly ok to work with e.g. 2 overlapping versions as here. 
+Deprecation is now moved from code to API docs that this version of the endpoint will be terminated at some point in time.
 
 The use of `application/hal+json`at the _greeting/{greeting}_ resource is still wrong from a content-type perspective, 
 but not from an `application/json` or `application/hateoas+json` perspective.  
 We will change that later to being correct as well as move away from the current way the json is handled in the service implementation.
 
+### The Feature "Automate build and elaborate API Documentation" - see slides page 47+
 
-### The Feature "Add Standard API Documentation" - see slides page 42+
+The greeting service now have some basic documentation, that can be viewed in tools 
+understanding OpenAPI specification version 2. There are some parts missing though. 
+There is no expectations defined in the API that states a consumer must be able to 
+handle a bad request, non-supported content-type, permanently moved etc. 
+Specifying that using annotations would further clutter the code.
+Service must have elaborated API documentation.
 
-The Service must be documented using openAPI Specification version 2. 
-The annotations are used in order to have the code actually defining the API.
-When doing API first, the API is usually easier to communication if it has the
-right level of abstraction. Therefore the API implemented in code is an extension
-of the abstracted API.   
+The feature targets the having an easy to read documentation of the API and 
+prepare consumers for changes to the API, resources may be moved, 
+operations may be deferred, content may not be authoritative from a given 
+endpoint.
+
+
+The greeting list continues to return a list of greetings for consumers accepting "application/hal+json" and the greetings themselves remains detailed as explicit resources.
+
 
 # greeting-rest-service
 
@@ -115,9 +120,13 @@ To clean an existing checkout and build:
 
     mvn clean package
 
+To clean an existing checkout, build and generate API docs:
+
+    mvn clean package exec:java@api-docs
+
 To run the REST Server standalone:
 
-    mvn exec:java 
+    mvn exec:java@start-server 
 
 To test the REST service use e.g. Postman:
     

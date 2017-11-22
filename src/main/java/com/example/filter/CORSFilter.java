@@ -18,7 +18,7 @@ public class CORSFilter implements ContainerResponseFilter {
         headers.add("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, PATCH, OPTIONS, HEAD");
         headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, If-Match, If-None-Match, "
                 // default are: Accept, Accept-Language, Content-Language, Content-Type(subset only)
-                + "X-Log-Token, X-Client-Version, X-Client-ID, X-Service-Generation, X-Requested-With, X-Client-Id");
+                + "X-Log-Token, X-Client-Version, X-Client-ID, X-Service-Generation, X-Requested-With");
         headers.add("Access-Control-Expose-Headers", "Location, Retry-After, Content-Encoding, "
                 + "ETag, "
                 // default exposes are: Cache-Control, Content-Language, Content-type, Expires, Last-Modified, Pragma
