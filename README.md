@@ -22,52 +22,57 @@ This section is about reflecting over the code as it is now, looking at the impl
 Furthermore looking back at the experiences you had during the implementation.
 Please comment if you experienced other things during your implementation of the "Add API Documentation" feature.
 
-The structure of the service has improved, the different parts has been mad explicit in the code.
-A package for the rudimentary API doc generation has been added.     
-
-The Open API specification in this initial edition can be found in the target/api folder.
+The Open API specification in this more elaborate edition can be found in the target/api folder.
 The YAML file can be opened in editor.swagger.io and apiary.io and the API viewed there.
 
-Annotations like e.g. ApiOperation etc. has been added to the code.
-A service API specification was generated as a part of the build.
-The documentation can now be viewed in the swagger editor and apiary, they both support the OpenAPI. 
+Annotations like e.g. ApiOperation etc. is still in the code, and the extended service API specification
+is generated as a part of the build. If you view the generated specification in swagger editor and apiary,
+you will see a more detailed OpenAPI specification now. 
+
+As mentioned previously, the development speed of the service is important and the complexity should not 
+be within the documentation of the service, that should be with the services and the ability to allow for 
+individual consumers to catch up on service content versions in their own pace. There is more to it than 
+versioning, the consumers needs to be aware of what they can expect from the service. 
+Thus in order to create the best situation for the service itself, it is necessary to prepare 
+the consumers for the responses that might occur. If a service does not specify a 301, the 
+consumer may not prepare for that response and that will be perceived as an error.
+Even the 301 is standard part of the HTTP specification, the perception of error is the result.
+
+The implementation of the automated and elaborated API documentation and there are a number 
+of responses that are relevant to signal to a consumer, using the OpenAPI specification, 
+in order to prepare the consumer  for 301, 202, 415, .... responses etc. and 
+specifying which headers accompanies these responses and what do they mean. 
+
+Why not just include all possible responses not included in the generated specification and make
+the consumers prepare for everything? This would not really be service oriented and there needs 
+to be a balance for what you anticipate is a realistic response you are going to use either now or
+in a future not too far away from now. 
+Everyone has to figure out what their needs are in relation to responses and headers for an 
+endpoint or service, and what could the general set you would include as a function of e.g. verb as done here.
+The important part is that it is possible to signal to consumers what they can expect 
+and what responses they need to be able to react to.
+
+Whether this example is including too much or not is definitely a topic worth discussing.
+I have included a set of predefined request headers together with a set of general 
+responses and verb specific responses. If these had to be included in the code, 
+that would have cluttered the code significantly.
+ 
+### The Feature "Automate build and Start Optimizing Bandwidth" - see slides page 51+
+
+The greeting service now have some elaborated documentation, that can be viewed in tools 
+understanding OpenAPI specification version 2. The reality is that the service does not 
+use any form of optimization e.g. not returning content to the consumers, when they 
+already have the newest version.  
+
+The feature targets having the ability to only return e.g. currently we may cache 
+for a long time as no new instances of greetings can be made yet, and thus we will 
+start by delivering a [ETag](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19) 
+value back that the client can present to the service endpoint and thus the service endpoint 
+implementation can know whether to return a version to the consumer or signal back that the 
+consumer already has the correct version.
 
 
-The API will have a version that follows the code and could be deployed as a part of an service catalogue 
-having a service catalogue client that can view the code, deliver endpoints for “try it”, and links to 
-subscriptions, contracts  etc. That application is promoted using every normal means for promoting 
-applications such as SEO to make your service rank well, when potential consumers are searching for services 
-they can build their business on top off.
-
-If you have done the implementation using swagger annotations directly in the code, 
-you may have used quite some space in the Greeting resource and that may clutter 
-the development experience.
-The development speed of the service is important and the complexity should not 
-be within the documentation of the service, that should be with the services and 
-the ability to allow for individual consumers to catch up on service content 
-versions in their own pace. 
-
-Note that the Original getGreetings is still working in order to keep consumers of that version happy. 
-Deprecation is now moved from code to API docs that this version of the endpoint will be terminated at some point in time.
-
-The use of `application/hal+json`at the _greeting/{greeting}_ resource is still wrong from a content-type perspective, 
-but not from an `application/json` or `application/hateoas+json` perspective.  
-We will change that later to being correct as well as move away from the current way the json is handled in the service implementation.
-
-### The Feature "Automate build and elaborate API Documentation" - see slides page 47+
-
-The greeting service now have some basic documentation, that can be viewed in tools 
-understanding OpenAPI specification version 2. There are some parts missing though. 
-There is no expectations defined in the API that states a consumer must be able to 
-handle a bad request, non-supported content-type, permanently moved etc. 
-Specifying that using annotations would further clutter the code.
-Service must have elaborated API documentation.
-
-The feature targets the having an easy to read documentation of the API and 
-prepare consumers for changes to the API, resources may be moved, 
-operations may be deferred, content may not be authoritative from a given 
-endpoint.
-
+The greeting list continues to return a list of greetings for consumers accepting "application/hal+json" and the greetings themselves remains detailed as explicit resources.
 
 The greeting list continues to return a list of greetings for consumers accepting "application/hal+json" and the greetings themselves remains detailed as explicit resources.
 

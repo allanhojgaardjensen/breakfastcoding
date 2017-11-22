@@ -1,8 +1,13 @@
 package com.example.service.api;
 
+import java.util.List;
+import java.util.Map;
+
 import io.swagger.annotations.SwaggerDefinition;
 import io.swagger.jaxrs.Reader;
 import io.swagger.jaxrs.config.ReaderListener;
+import io.swagger.models.Operation;
+import io.swagger.models.Path;
 import io.swagger.models.Swagger;
 import io.swagger.models.Tag;
 
@@ -26,6 +31,15 @@ public class OpenAPIListener implements ReaderListener {
 
     @Override
     public void afterScan(Reader reader, Swagger apiDocs) {
+        Map<String, Path> paths = apiDocs.getPaths();
+        paths.forEach((k, p) -> {
+            List<Operation> operations = p.getOperations();
+            operations.forEach(operation -> {
+                ResponseDoc.addStandardResponses(operation);
+                HeaderDocs.addStandardParameters(operation);
+                ResponseDoc.addVerbSpecificHeaders(p);
+            });
+        });
         APIDocsGenerator.writeAPI(apiDocs);
     }
 }
