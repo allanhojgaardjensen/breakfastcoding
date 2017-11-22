@@ -177,10 +177,10 @@
         </module>
         <module name="Regexp">
             <property name="format"
-                value="Header: |Revision: |@version|@since" />
+                value="Header: |Revision: |@version|@since|@author" />
             <property name="illegalPattern" value="true" />
             <property name="message"
-                value="Header: |Revision: |@version|@since - are noise - remove it" />
+                value="Header: |Revision: |@version|@since|@author - are noise - remove it" />
         </module>
         <module name="Regexp">
             <property name="format"

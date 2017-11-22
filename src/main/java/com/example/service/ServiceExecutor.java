@@ -1,9 +1,10 @@
-package com.example;
+package com.example.service;
 
 import java.net.URI;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.example.filter.CORSFilter;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;

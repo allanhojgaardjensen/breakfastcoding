@@ -1,5 +1,6 @@
 package com.example;
 
+import com.example.service.ServiceExecutor;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
@@ -102,10 +103,47 @@ public class GreetingTest {
                 + "    }"
                 + "}", msg);
     }
+    
+    @Test
+    public void testHelloGreetingFromEnglishV2() {
+        Response response = target.path("greetings/hello").request().accept("application/hal+json;concept=greeting").acceptLanguage("en").get(Response.class);
+        String msg = response.readEntity(String.class);
+        assertEquals("{"
+                    + "  \"greeting\": \"Hello!\","
+                    + "  \"language\": \"English\","
+                    + "  \"country\": \"England\","
+                    + "  \"native\": {"
+                    + "    \"language\": \"English\","
+                    + "    \"country\": \"England\""
+                    + "  },"
+                    + "  \"_links\": {"
+                    + "    \"href\": \"/greetings/hello\","
+                    + "    \"title\": \"English Greeting Hallo\""
+                    + "  }"
+                    + "}", msg);
+    }
+    @Test
+    public void testHelloGreetingFromEnglishV2Specific() {
+        Response response = target.path("greetings/hello").request().accept("application/hal+json;concept=greeting;v=2").acceptLanguage("en").get(Response.class);
+        String msg = response.readEntity(String.class);
+        assertEquals("{"
+                    + "  \"greeting\": \"Hello!\","
+                    + "  \"language\": \"English\","
+                    + "  \"country\": \"England\","
+                    + "  \"native\": {"
+                    + "    \"language\": \"English\","
+                    + "    \"country\": \"England\""
+                    + "  },"
+                    + "  \"_links\": {"
+                    + "    \"href\": \"/greetings/hello\","
+                    + "    \"title\": \"English Greeting Hallo\""
+                    + "  }"
+                    + "}", msg);
+    }
 
     @Test
-    public void testHelloGreetingFromEnglish() {
-        Response response = target.path("greetings/hello").request().accept("application/hal+json").acceptLanguage("en").get(Response.class);
+    public void testHelloGreetingFromEnglishV1Specific() {
+        Response response = target.path("greetings/hello").request().accept("application/hal+json;concept=greeting;v=1").acceptLanguage("en").get(Response.class);
         String msg = response.readEntity(String.class);
         assertEquals("{"
                     + "  \"greeting\": \"Hello!\","
@@ -123,17 +161,22 @@ public class GreetingTest {
         String msg = response.readEntity(String.class);
         assertEquals("{"
                     + "  \"greeting\": \"Hello!\","
-                    + "  \"country\": \"GB\","
+                    + "  \"language\": \"English\","
+                    + "  \"country\": \"England\","
+                    + "  \"native\": {"
+                    + "    \"language\": \"Engelsk\","
+                    + "    \"country\": \"England\""
+                    + "  },"
                     + "  \"_links\": {"
                     + "    \"href\": \"/greetings/hello\","
                     + "    \"title\": \"Engelsk Hilsen Hello\""
                     + "  }"
                     + "}", msg);
     }
-
+    
     @Test
-    public void testHalloGreetingFromDane() {
-        Response response = target.path("greetings/hallo").request().accept("application/hal+json").acceptLanguage("da").get(Response.class);
+    public void testHalloGreetingFromDaneV1() {
+        Response response = target.path("greetings/hallo").request().accept("application/hal+json;concept=greeting;v=1").acceptLanguage("da").get(Response.class);
         String msg = response.readEntity(String.class);
         assertEquals("{"
                     + "  \"greeting\": \"Hallo!\","
@@ -151,28 +194,19 @@ public class GreetingTest {
         String msg = response.readEntity(String.class);
         assertEquals("{"
                 + "  \"greeting\": \"Hallo!\","
-                + "  \"country\": \"DK\","
+                + "  \"language\": \"Dansk\","
+                + "  \"country\": \"Danmark\","
+                + "  \"native\": {"
+                + "    \"language\": \"Danish\","
+                + "    \"country\": \"Denmark\""
+                + "  },"
                 + "  \"_links\": {"
                 + "    \"href\": \"/greetings/hallo\","
                 + "    \"title\": \"Danish Greeting Hallo\""
                 + "  }"
                 + "}", msg);
     }
-
-    @Test
-    public void testHalloGreetingFromElseWhere() {
-        Response response = target.path("greetings/hallo").request().accept("application/hal+json").acceptLanguage("en").get(Response.class);
-        String msg = response.readEntity(String.class);
-        assertEquals("{"
-                + "  \"greeting\": \"Hallo!\","
-                + "  \"country\": \"DK\","
-                + "  \"_links\": {"
-                + "    \"href\": \"/greetings/hallo\","
-                + "    \"title\": \"Danish Greeting Hallo\""
-                + "  }"
-                + "}", msg);
-    }
-
+    
     @Test
     public void testNonExistentGreeting() {
         Response response = target.path("greetings/ballo").request().accept("application/hal+json").acceptLanguage("en").get(Response.class);

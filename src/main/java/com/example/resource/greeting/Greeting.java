@@ -1,4 +1,4 @@
-package com.example;
+package com.example.resource.greeting;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,15 +24,16 @@ public class Greeting {
     private final Map<String, GreetingProducer> greetingProducers = new HashMap<>();
 
     public Greeting() {
-        greetingProducers.put("application/hal+json", this::getGreetingG1V1);
-        greetingProducers.put("application/hal+json;concept=greeting", this::getGreetingG1V1);
+        greetingProducers.put("application/hal+json", this::getGreetingG1V2);
+        greetingProducers.put("application/hal+json;concept=greeting", this::getGreetingG1V2);
         greetingProducers.put("application/hal+json;concept=greeting;v=1", this::getGreetingG1V1);
+        greetingProducers.put("application/hal+json;concept=greeting;v=2", this::getGreetingG1V2);
     }
 
     /**
      * Method handling HTTP GET requests.
      *
-     * @return String that will be returned containing "application/json".
+     * @return String that will be returned containing "application/hal+json".
      */
     @GET
     @Produces({"application/hal+json"})
@@ -87,7 +88,7 @@ public class Greeting {
      * @param accept the chosen accepted content-type by consumer
      * @param acceptLanguage client can set the preferred preferredLanguage(s) as in HTTP spec.
      * @param greeting the greeting wanted by consumer
-     * @return String that will be returned containing "application/json".
+     * @return String that will be returned containing "application/hal+json".
      */
     @GET
     @Path("{greeting}")
@@ -138,6 +139,45 @@ public class Greeting {
                         .build();
         }
     }
+    /**
+     * Implements version one of the greeting service, where detailed information needs to be handled and returned to consumer, this
+     * construction using interface and explicitly mapping content-types to methods allows to maintain multiple content versions in same service
+     * endpoint and thus be able to ensure that consumers can roll back to this version once the next edition that is no longer compliant is
+     * available.
+     * <p>
+     * The consumer roll back by entering the full content-type in the Accept header in this case {@code application/json;concept=greeting;v=1}
+     * or more specific and correct as that is the actual format used. {@code application/hal+json;concept=greeting;v=1}
+     */
+    private Response getGreetingG1V2(String accept, String acceptLanguage, String greeting) {
+        String language = preferredLanguage(acceptLanguage);
+        String greet = getGreetingPathParam(greeting);
+        switch (greet) {
+            case "hallo":
+                return Response
+                        .ok(getDanishFull(language))
+                        .type("application/hal+json;concept=greeting;v=2")
+                        .build();
+            case "hello":
+                return Response
+                        .status(200)
+                        .type("application/hal+json;concept=greeting;v=2")
+                        .entity(getEnglishFull(language))
+                        .build();
+            default:
+                return Response
+                        .status(404)
+                        .type(MediaType.APPLICATION_JSON)
+                        .entity("{"
+                                + "  \"message\": \"Sorry your greeting does not exist yet!\","
+                                + "  \"_links\":{"
+                                + "      \"href\":\"/greetings\","
+                                + "      \"type\":\"application/hal+json\","
+                                + "      \"title\":\"List of exixting greetings\""
+                                + "      }"
+                                + "}")
+                        .build();
+        }
+    }
 
     private String getGreetingPathParam(String greeting) {
         if (greeting == null || greeting.isEmpty()) {
@@ -155,6 +195,70 @@ public class Greeting {
         return preferredLanguage[0];
     }
 
+    private String getDanishFull(String language) {
+        if (language.contains("en")) {
+            return "{"
+                    + "  \"greeting\": \"Hallo!\","
+                    + "  \"language\": \"Dansk\","
+                    + "  \"country\": \"Danmark\","
+                    + "  \"native\": {"
+                    + "    \"language\": \"Danish\","
+                    + "    \"country\": \"Denmark\""
+                    + "  },"
+                    + "  \"_links\": {"
+                    + "    \"href\": \"/greetings/hallo\","
+                    + "    \"title\": \"Danish Greeting Hallo\""
+                    + "  }"
+                    + "}";
+        } else {
+            return "{"
+                    + "  \"greeting\": \"Hallo!\","
+                    + "  \"language\": \"Dansk\","
+                    + "  \"country\": \"Danmark\","
+                    + "  \"native\": {"
+                    + "    \"language\": \"Dansk\","
+                    + "    \"country\": \"Danmark\""
+                    + "  },"
+                    + "  \"_links\": {"
+                    + "    \"href\": \"/greetings/hallo\","
+                    + "    \"title\": \"Dansk Hilsen Hallo\""
+                    + "  }"
+                    + "}";
+        }
+    }
+
+    private String getEnglishFull(String language) {
+        if (language.contains("da")) {
+            return "{"
+                    + "  \"greeting\": \"Hello!\","
+                    + "  \"language\": \"English\","
+                    + "  \"country\": \"England\","
+                    + "  \"native\": {"
+                    + "    \"language\": \"Engelsk\","
+                    + "    \"country\": \"England\""
+                    + "  },"
+                    + "  \"_links\": {"
+                    + "    \"href\": \"/greetings/hello\","
+                    + "    \"title\": \"Engelsk Hilsen Hello\""
+                    + "  }"
+                    + "}";
+        } else {
+            return "{"
+                    + "  \"greeting\": \"Hello!\","
+                    + "  \"language\": \"English\","
+                    + "  \"country\": \"England\","
+                    + "  \"native\": {"
+                    + "    \"language\": \"English\","
+                    + "    \"country\": \"England\""
+                    + "  },"
+                    + "  \"_links\": {"
+                    + "    \"href\": \"/greetings/hello\","
+                    + "    \"title\": \"English Greeting Hallo\""
+                    + "  }"
+                    + "}";
+        }
+    }
+    
     private String getDanish(String language) {
         if (language.contains("en")) {
             return "{"
@@ -174,7 +278,7 @@ public class Greeting {
                     + "    \"title\": \"Dansk Hilsen Hallo\""
                     + "  }"
                     + "}";
-        }
+        }   
     }
 
     private String getEnglish(String language) {
