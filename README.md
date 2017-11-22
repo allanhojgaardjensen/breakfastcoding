@@ -32,6 +32,32 @@ Unzip the previously downloaded zip file and step into the folder `breakfastcodi
 * copy all selected files into the local folder containing the initial code.
 * check that your code looks like what is in this repository.  
 
+## Get started with the Breakfast Coding
+
+Once we have the initial version of the code available and having the code running 
+see the `useful commands` section below. You can download the slides from
+https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/slides/BreakfastCoding.pdf
+and find page 23 where the description of the first feature can be found.
+
+### The Feature "Add English Greeting" - see slides page 23+
+
+    The service must greet in more than a single language currently Danish. 
+    Thus the service is extended to greet in English too.
+    The service endpoint has the “Accept-Language” header as a part of the 
+    initial implementation...without it being used....
+    
+    that means that somebody (“me”) did start something in the initial implementation and did not finish that.....
+
+    hmm...  that’s a code smell... 
+
+    Anyway ... let’s have the service greeting in English in addition to the existing Danish greeting.
+    
+    We will use e.g. the Accept-Language header for being able to return
+    The Danish Greeting `{"greeting":"Hallo!"}` we already have and add
+    an English Greeting `{"greeting":"Hello!"}` to the service.
+    
+    
+
 # greeting-rest-service
 
 ## Introduction
