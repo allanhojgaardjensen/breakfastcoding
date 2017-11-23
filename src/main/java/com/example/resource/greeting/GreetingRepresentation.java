@@ -106,4 +106,20 @@ public class GreetingRepresentation {
                 + "}"
                 + "}";
     }
+
+    public String toHATEOAS() {
+        return "{"
+                +  "\"greeting\":\"" + greeting + "\","
+                +  "\"language\":\"" + language + "\","
+                +  "\"country\":\"" + country + "\","
+                +  "\"native\":{"
+                +   "\"language\":\"" + nativeInfo.getLanguage() + "\","
+                +   "\"country\":\"" + nativeInfo.getCountry() + "\""
+                +  "},"
+                +  "\"_links\":{"
+                +   "\"href\":\"/" + links.getSelf().getHref() + "\","
+                +   "\"title\":\"" + links.getSelf().getTitle() + "\""
+                +  "}"
+                + "}";
+    }
 }

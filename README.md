@@ -23,144 +23,42 @@ and find page 23 where the description of the first feature can be found.
 
 ### Findings from the implementation of the previous feature
 
-It is now possible to create a greeting and see that in the greeting list. 
-Once you created a greeting by POSTing to /greetings you will see where the greeting
-was created in the `201 Created` response containing the `Location` header.
+We see that a response from a PUT greeting returns a 201 created in the event of a 
+successful create and it includes a Location header informing the consumer about 
+the whereabouts of the newly created greeting.
+Furthermore we see that a 201 Created is responded in the event of a POST, whereas 
+now the 409 Conflict is returned if we try to re-create a greeting.
+Recreation of the “same” object is no longer allowed using the POST verb. 
+Creation and replace is allowed using the verb PUT and the creation is responded 
+to using a 201 Created and a 200 OK in the event of a replace. This makes it obvious 
+to the consumer whether the object was created in the first or in the second attempt.
+The principle on idempotency is maintained in this way of working. Perhaps you noticed
+that POST became a "safe" operation because it was only allowed to initially 
+create greetings.
 
-In other words, we see that a response from a POST new greeting returns a 201 created in the event 
-of a successful create and it includes a Location header informing the consumer 
-about the whereabouts of the newly created greeting.
-Furthermore we see that a 400 Bad Request is returned if the request was malformed.
+We see that _/greetings/{greeting}_ the initial version (generation 1 version 1) has 
+been removed and thus the _application/hal+json;concept=greeting;v=1_ is no longer 
+available for consumers anymore, whereas the version 2 and 3 are still supported.
+This initial greeting mix of a simple Danish and English greeting is also gone and 
+the list is all that is left at the /greetings resource.
+Finally we are on our way towards a semantically reasonable API. But wait a minute, 
+how does the client know what versions are supported. They don´t - in the current 
+implementation. 
 
-Recreation of the same object is allowed in the current version and thus there is 
-no way for the consumer to see if the initial create went well or not, unless the 
-consumer does a GET to a location the consumer guesses is the place for the 
-newly created greeting and reacts to a not found. This would be a good thing to 
-address in a later feature. This may however cause a real problem for consumers that 
-are adopting the possibility to recreate/replace using POST. In a real service, that 
-would not be recommend to allow for a functionality and then restrict that away 
-afterwards.
- 
-We see that a successfully created greeting is now part of the greetings list.
-If stop for a moment and looks at the semantics here, is it ok to have greetings 
-posing as separate objects, where language is the differentiator or not.
-The code looks different, the objects are no longer Strings they are real objects 
-in the implementation, although very simple ones. The objects capable of creating 
-resulting json are postfixed Representation. They are not the internal model of a 
-service, they are merely representing a given view or projection, that is signaled 
-by the content parameter concept={view/projection} and currently that is version 3
- of the content ;v=3 in the endpoint /greetings/{greeting}
+Usually I would use a content producer _application/hal+json_ or _application/json_ having 
+the content-type parameter _concept=metadata_ which is an endpoint that runtime can 
+inform the consumers about the endpoint capability. Annotations like the 
+_ApiOperation_ attribute “produces”  can be used to include that in the service 
+specification.
 
-We see that the implementation of the initial implementation of
-		 /greetings/{greeting} 
-for version 1 has become deprecated. As deprecation in the code requires service 
-consuming developers to look at the service implementation documentation (javaDoc in this case)
-and stating deprecation as a text in a service specification, requires the developers 
-to look into the Open API specification and take care of that - or build a compliance 
-check into the build pipeline checking for deprecated in the API. So no standardized way 
-to inform about that and certainly no dynamic way to inform the consuming application 
-about that in real time. We use “X-Status” response header is used for that. 
-The observation of `X-Status: deprecated` could be automated into the consumer 
-application and a ticket could be raised in their issue backlog in order for them to 
-do something about that, or to make the support last a little longer by requesting that 
-from the service provider.
+### The Feature "Delete existing Greetings" - see slides page 68+
 
-Furthermore we are running “2 version overlap” and that means we have 3 versions active right now, 
-when we change and deprecate the oldest. You can run any overlapping # of versions, and they do 
-have to be the latest versions.
- 
-If you have very important consumers you may want to keep some of the older versions 
-and have them available still, this is somewhat similar to continuing to run old releases. 
-You may run them in the same service implementation for a while, with a goal for them to 
-be separated or the consumers upgraded. If that is not happening and it becomes a burden 
-it is possible to split the service. 
+The service is slowly becoming a small service exposure, it still very focused on 
+the exposure to stay relatively simple. It is now time to be able to delete greetings.
+The DELETE verb is the best suited for that purpose.
 
-The X-Service-Generation header can be used for that purpose and used for segmentation.
-
-Very simple “just enough” implementations of HAL has been made and the application/hal+json 
-is finally appropriate to be used, there are libraries out there that can be used to map 
-Representations between Objects and HAL, see HAL information. HAL in the form of 
-application/hal+json is an informational standard.
-
-
-Caution:
-Normally you would use the libraries, the “just enough” implementation her is just 
-to show the mapping as simple as possible. There are limitations to the implementation 
-done here such as not support for array or object, this only supports object. 
-This simple implementation is replaced later in the breakfast coding session.
-
-Btw:
-Did you have issues handling the “native” object as `native` is a reserved keyword
- in java and thus it needs some form of mapping. This was chosen as a way to 
-illustrate that sometimes you will run into thing that are platform implementation 
-specifics and there will usually be a way round that.
-
-When you look at the code at this stage you will properly have seen, it is rapidly on 
-its way to become a mess. This is entirely my fault, due to a number of bad decisions 
-and lack of accuracy in requiring headers being set and correctness in  using HAL etc. 
-I created a situation, where the code inside the service get cluttered, despite 
-the efforts made to exclude a big portion of the annotations.
-
-So we will do a clean up whilst moving forward - however in a real life setup - 
-that would take long time to get away with that having multiple consumers onboard. 
-
-
-### The Feature "Direct Create new and Replace existing Greetings" - see slides page 68+
-
-The service is still a relative dull service, it is now possible to create a new
-greeting, we want to be ready for doing replaces of greetings and possibly create 
-new greetings directly under greetings/{new greeting}. The PUT verb is probably the 
-best suited for that purpose.
-
-The initial PUT must return a 201 Created with a Location Header, an attempt to 
-recreate/replace the greeting must return a 200 OK. The previously implemented 
-possibility to recreate using POST must not be possible going forward.
-
-#### Examples
-
-The greeting used underneath is a Danish greeting used in the southern part.
-
-_A consumer preferring English would PUT to greetings/mojn_
-
-````json
-{
-  "greeting": "Møjn!",
-  "language": "Dansk",
-  "country": "Danmark",
-  "native": {
-    "language": "Danish",
-    "country": "Denmark"
-  },
-  "_links": {
-    "self": {
-      "href": "greetings/mojn",
-      "title": "Danish Greeting Mojn"
-    }
-  }
-}
-````  
-
-_A consumer preferring Danish would PUT to greetings/mojn_
-
-````json
-{
-  "greeting": "Møjn!",
-  "language": "Dansk",
-  "country": "Danmark",
-  "native": {
-    "language": "Dansk",
-    "country": "Danmark"
-  },
-  "_links": {
-    "self": {
-      "href": "greetings/mojn",
-      "title": "Dansk Hilsen Møjn"
-    }
-  }
-}
-
-````  
-
+The initial DELETE must return a 204 No Content - if the delete was successful. 
+Another attempt to delete the same greeting must return a 404 Not found. 
 
 ## Introduction
 
@@ -319,6 +217,63 @@ To test the REST service greeting in English:
                     }
                 }
             }
+
+To directly create a greeting
+
+    PUT http://localhost:8080/greetings/mojn
+    having set Accept-Language "en" and
+    having set Accept "application/hal+json"
+    having set Content-Type "application/json"
+    and having request body set to:
+            {
+              "greeting": "Møjn!",
+              "language": "Dansk",
+              "country": "Danmark",
+              "native": {
+                "language": "Danish",
+                "country": "Denmark"
+              },
+              "_links": {
+                "self": {
+                  "href": "greetings/mojn",
+                  "title": "Danish Greeting Mojn"
+                }
+              }
+            }
+
+    and get a response 201 back with
+
+    - Headers:
+        access-control-allow-headers: 
+            Content-Type, 
+            Authorization, 
+            If-Match, 
+            If-None-Match, 
+            X-Log-Token, 
+            X-Client-Version, 
+            X-Client-ID, 
+            X-Service-Generation, 
+            X-Requested-With
+
+        access-control-allow-methods: GET, POST, DELETE, PUT, PATCH, OPTIONS, HEAD
+        access-control-allow-origin: *
+        access-control-expose-headers: 
+            Location, 
+            Retry-After,    
+            Content-Encoding, 
+            ETag, 
+            X-Log-Token,
+            X-Status, 
+            X-RateLimit-Limit, 
+            X-RateLimit-Limit24h, 
+            X-RateLimit-Remaining, 
+            X-RateLimit-Reset
+        content-length: 0
+        location: http://localhost:8080/greetings/mojn
+        X-Log-Token: some UUID 
+
+    - Body:
+        (empty)
 
 To create a greeting
 
