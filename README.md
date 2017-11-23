@@ -23,42 +23,58 @@ and find page 23 where the description of the first feature can be found.
 
 ### Findings from the implementation of the previous feature
 
-We see that a response from a PUT greeting returns a 201 created in the event of a 
-successful create and it includes a Location header informing the consumer about 
-the whereabouts of the newly created greeting.
-Furthermore we see that a 201 Created is responded in the event of a POST, whereas 
-now the 409 Conflict is returned if we try to re-create a greeting.
-Recreation of the “same” object is no longer allowed using the POST verb. 
-Creation and replace is allowed using the verb PUT and the creation is responded 
-to using a 201 Created and a 200 OK in the event of a replace. This makes it obvious 
-to the consumer whether the object was created in the first or in the second attempt.
-The principle on idempotency is maintained in this way of working. Perhaps you noticed
-that POST became a "safe" operation because it was only allowed to initially 
-create greetings.
+The service has been cleaned from the early parts and the first of the greetings
+version has been taken out of support.
 
-We see that _/greetings/{greeting}_ the initial version (generation 1 version 1) has 
-been removed and thus the _application/hal+json;concept=greeting;v=1_ is no longer 
-available for consumers anymore, whereas the version 2 and 3 are still supported.
-This initial greeting mix of a simple Danish and English greeting is also gone and 
-the list is all that is left at the /greetings resource.
-Finally we are on our way towards a semantically reasonable API. But wait a minute, 
-how does the client know what versions are supported. They don´t - in the current 
-implementation. 
+We see that a response from a DELETE greeting returns a 204 no content in the event 
+of a successful delete and if you try to delete again it returns a 404 not found. 
+This is probably the best way to see idempotency in action, PUT, DELETE are 
+idempotent verbs. POST is not and may have side effects, whereas GET should never 
+have side effects.
+If you look at code right now it seems like the “infrastructural parts” are 
+occupying a significant amount of the lines of code in the service and this does 
+not have to be that way. There are ways to remove that into libraries and depend 
+on these and in that way reduce the footprint inside the individual service.
 
-Usually I would use a content producer _application/hal+json_ or _application/json_ having 
-the content-type parameter _concept=metadata_ which is an endpoint that runtime can 
-inform the consumers about the endpoint capability. Annotations like the 
-_ApiOperation_ attribute “produces”  can be used to include that in the service 
-specification.
+It is included here to have “everything” within reach in this simple example 
+service.
 
-### The Feature "Delete existing Greetings" - see slides page 68+
+#### Lessons learned
+A service with better semantics seems to emerge. It it still doubtful whether 
+the semantics of having “multiple language dependent instances” under the same 
+resource, this starts to get more confusing and that needs to be addressed going 
+forward. Probably country needs to be a separate resource and the greetings may 
+be explicitly made having an e.g. English greeting link to one or more countries 
+and languages where the greeting gradually becomes a simpler object and deals 
+with the meaning of the greeting and not with the whole on a superficial level 
+as now. On the other hand is this too much to do for a simple service like the 
+greeting service? 
 
-The service is slowly becoming a small service exposure, it still very focused on 
-the exposure to stay relatively simple. It is now time to be able to delete greetings.
-The DELETE verb is the best suited for that purpose.
+### The Feature "Partial Update existing Greetings" - see slides page 83+
 
-The initial DELETE must return a 204 No Content - if the delete was successful. 
-Another attempt to delete the same greeting must return a 404 Not found. 
+Partially updating an object could be done using PATCH /greetings/{greeting}, e.g.
+
+ PATCH /greetings/mojn
+ Accept-Language "en"
+
+````json
+    {
+     "op":"replace",
+     "path":"links/self/title",
+     "value":"This is the new title"
+    }
+````
+ PATCH /greetings/mojn
+ Accept-Language "en"
+
+````json
+    {
+     "op":"replace",
+     "path":"language",
+     "value":"Land"
+    }
+````
+
 
 ## Introduction
 
@@ -88,15 +104,9 @@ if a consumer has the need to go back to a previous version, once a version 2 e.
 
     application/hal+json;concept=greeting;v=2
 
-Please not that the earliest version has been deprecated here
+Please not that the earliest version has been removed 
 
     application/hal+json;concept=greeting;v=1
-
-If a consumer calls the service and uses _application/hal+json;concept=greeting;v=1_ in the _Accept_ header
-the response contains a `X-Status` `deprecated` in order to signal to the consumer that the support for this
-version is about to end at some time. The consumer can then make a request through the issue ticketing 
-system at the service implementor to get a potential prolonged support for that service.
-
 
 ## Working with the service
 
@@ -125,30 +135,6 @@ To build, generate site, API docs and run the REST Server standalone:
 
     mvn clean verify exec:java@api-docs site exec:java@start-server 
 
-To test the REST service use e.g. Postman:
-    
-    GET http://localhost:8080/greetings
-
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 21
-          content-type: application/json
-          X-Status : deprecated
-     - Body:
-            { "greeting": "Hallo!" }
-
-To test the REST service greeting in English:
-
-    GET http://localhost:8080/greetings
-    having set Accept-Language "en"
-
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 21
-          content-type: application/json
-          X-Status : deprecated
-     - Body:
-            { "greeting": "Hello!" }
 
 To test the REST service use e.g. Postman:
     
@@ -217,6 +203,12 @@ To test the REST service greeting in English:
                     }
                 }
             }
+
+To directly delete a greeting
+
+    DELETE http://localhost:8080/greetings/mojn
+    having set Accept-Language "en"
+
 
 To directly create a greeting
 

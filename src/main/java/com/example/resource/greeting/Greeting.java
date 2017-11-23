@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 import javax.validation.constraints.Pattern;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.POST;
@@ -38,7 +39,6 @@ import io.swagger.annotations.ApiOperation;
 @Path("greetings")
 @Api(value = "/greetings", tags = {"greetings"})
 public class Greeting {
-
     private static final Logger LOGGER = Logger.getLogger(Greeting.class.getName());
     private static final Map<String, GreetingRepresentation> REPRESENTATIONS = new ConcurrentHashMap<>();
     private final Map<String, GreetingProducer> greetingProducers = new HashMap<>();
@@ -222,6 +222,48 @@ public class Greeting {
             LOGGER.log(Level.WARNING, "Sorry, I could not parse the input. which was:\n" + greeting.toString(), ex);
         }
         return Response.status(Response.Status.BAD_REQUEST).build();
+    }
+
+    /**
+     * A Greeting can be deleted.
+     * <p>
+     * A LogToken can be part of the request and that will be returned in the response. If no LogToken is present in the request a new one is extracted and returned to the
+     * consumer. The format for the LogToken is a 36 long string that can consist of a-z, A-Z,0-9 and - In other words: small letters, capital letters and numbers and hyphens
+     * <p>
+     * @param request the actual http request
+     * @param accept the chosen accepted content-type by consumer
+     * @param acceptLanguage client can set the preferred preferredLanguage(s) as in HTTP spec.
+     * @param logToken a correlation id for a consumer
+     * @param greeting the greeting to delete.
+     * @return an empty response inly containing headers
+     */
+    
+    @DELETE
+    @Path("{greeting}")
+    @Consumes({"application/json"})
+    @ApiOperation(value = "delete a greeting")
+    public Response deleteGreeting(
+            @Context Request request,
+            @HeaderParam("Accept") String accept,
+            @HeaderParam("Accept-Language") @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
+            @HeaderParam("X-Log-Token") @Pattern(regexp = "^[a-zA-Z0-9\\-]{36}$") String logToken,
+            @PathParam("greeting") @Pattern(regexp = "[a-z]*") String greeting) {       
+        String key = greeting + "_" + preferredLanguage(acceptLanguage);
+        GreetingRepresentation stored = REPRESENTATIONS.get(key);
+        Response.Status status;
+        if (stored == null) {
+            LOGGER.log(Level.INFO, "Attempted to delete a non-existing Greeting " + key);
+            status = Response.Status.NOT_FOUND;
+        } else {
+            LOGGER.log(Level.INFO, "Deleted " + key);
+            status = Response.Status.NO_CONTENT;
+            REPRESENTATIONS.remove(key);
+            LOGGER.log(Level.INFO, "Greetings " + REPRESENTATIONS.size());
+        }
+        return Response
+            .status(status)
+            .header("X-Log-Token", validateOrCreateToken(logToken))
+            .build();
     }
 
     /**

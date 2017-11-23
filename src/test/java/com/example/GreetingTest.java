@@ -556,6 +556,69 @@ public class GreetingTest {
     }
 
     @Test
+    public void testCreateDeleteDanishGreetingForDanish() {
+        String entity = "{\"greeting\":\"Hejsa!\",\"language\":\"Dansk\",\"country\":\"Danmark\",\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"},\"_links\":{\"self\":{\"href\":\"greetings/hejsa\",\"title\":\"Dansk Hilsen Hejsa\"}}}";
+        Response response = target
+                .path("greetings/hejsa")
+                .request()
+                .accept("application/hal+json")
+                .acceptLanguage("da")
+                .put(Entity.json(entity));        
+        assertEquals(201, response.getStatus());
+        response = target
+                .path("greetings/hejsaa")
+                .request()
+                .accept("application/json")
+                .acceptLanguage("da")
+                .delete();        
+        assertEquals(404, response.getStatus());
+        response = target
+                .path("greetings/hejsa")
+                .request()
+                .accept("application/json")
+                .acceptLanguage("da")
+                .delete();        
+        assertEquals(204, response.getStatus());
+        response = target
+                .path("greetings/hejsa")
+                .request()
+                .accept("application/json")
+                .acceptLanguage("da")
+                .delete();        
+        assertEquals(404, response.getStatus());    
+        entity = "{\"greeting\":\"Hejsa!\",\"language\":\"Dansk\",\"country\":\"Danmark\",\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"},\"_links\":{\"self\":{\"href\":\"greetings/hejsa\",\"title\":\"Dansk Hilsen Hejsa\"}}}";
+        response = target
+                .path("greetings/hejsa")
+                .request()
+                .accept("application/hal+json")
+                .acceptLanguage("da")
+                .put(Entity.json(entity));
+        assertEquals(201, response.getStatus());    
+        response = target
+                .path("greetings/hejsa")
+                .request()
+                .accept("application/json")
+                .acceptLanguage("da")
+                .delete();        
+        assertEquals(204, response.getStatus());
+        response = target
+                .path("greetings/hejsa")
+                .request()
+                .accept("application/hal+json")
+                .acceptLanguage("da")
+                .put(Entity.json(entity));
+        assertEquals(201, response.getStatus());    
+        response = target
+                .path("greetings/hejsa")
+                .request()
+                .accept("application/json")
+                .acceptLanguage("da")
+                .delete();        
+        assertEquals(204, response.getStatus());
+    }
+    
+
+    @Test
     public void testInitialCreateFrenchGreetingForSwedish() {
         String entity = "{\"greeting\":\"Allo!\",\"language\":\"Franska\",\"country\":\"Frankrike\",\"native\":{\"language\":\"Français\",\"country\":\"France\"},\"_links\":{\"self\":{\"href\":\"greetings/allo\",\"title\":\"Fransk Hilsen Allo Rettet\"}}}";
         Response response = target
