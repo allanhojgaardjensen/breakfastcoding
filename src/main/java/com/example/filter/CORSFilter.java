@@ -8,7 +8,7 @@ import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MultivaluedMap;
 
 /**
- * a general CORS filter that allows everything from *
+ * A general CORS filter that allows everything from *
  */
 public class CORSFilter implements ContainerResponseFilter {
 

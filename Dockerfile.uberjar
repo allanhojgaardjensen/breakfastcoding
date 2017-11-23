@@ -1,0 +1,17 @@
+###################################################################################
+#                                                                                 #
+# Builds Docker container containing the Greetings Service based on the uber-jar  #
+# produced in the maven build.                                                    #
+#                                                                                 #
+# ------------------------------------------------------------------------------- #
+#                                                                                 #
+# The Docker image is build:                                                      #
+#       docker image build . -t greeting-rest-service-jar -f Dockerfile.uberjar   #
+#                                                                                 #
+# The Docker container is executed by:                                            #
+#       docker run -p 8080:8080 -it --rm greeting-rest-service-jar                #
+#                                                                                 #
+###################################################################################
+FROM openjdk:8
+COPY ./target/shaded-greeting-rest-service-1.0-SNAPSHOT.jar shaded-greeting-rest-service-1.0-SNAPSHOT.jar
+CMD ["java","-jar","shaded-greeting-rest-service-1.0-SNAPSHOT.jar"]

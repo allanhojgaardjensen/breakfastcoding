@@ -25,9 +25,9 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 
 @ApplicationPath("/")
-public class ServiceExecutor {
+public final class ServiceExecutor {
     // Base URI the Grizzly HTTP server will listen on
-    public static final String BASE_URI = "http://localhost:8080/";
+    public static final String BASE_URI = "http://0.0.0.0:8080/";
     private static final Logger LOGGER = Logger.getLogger(ServiceExecutor.class.getName());
 
     private ServiceExecutor() {
@@ -52,7 +52,7 @@ public class ServiceExecutor {
     public static void main(String[] args) throws Exception {
         final HttpServer server = startServer();
         LOGGER.log(Level.INFO, String.format("Jersey app started with WADL available at "
-                + "%sapplication.wadl\nHit enter to stop it...", BASE_URI));
+                + "%sapplication.wadl%nHit enter to stop it...", BASE_URI));
         System.in.read();
         server.shutdownNow();
     }

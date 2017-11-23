@@ -16,7 +16,7 @@ import io.swagger.util.Yaml;
 /**
  * Generates the Open API documentation for the service.
  */
-public class APIDocsGenerator {
+public final class APIDocsGenerator {
 
     private static final Logger LOGGER = Logger.getLogger(APIDocsGenerator.class.getName());
     private static final String API_DOCS_PATH = "target/api";
@@ -34,25 +34,25 @@ public class APIDocsGenerator {
             handleApiDocsArguments(args);
             configureApiDocs(args);
         } else {
-            LOGGER.info("usage is: \n"
-                + " - path\n"
-                + " - filename\n"
-                + " - title\n"
-                + " - version\n"
-                + " - contact name\n"
-                + " - contact email\n"
-                + " - url\n"
-                + " - terms\n"
-                + " \n");
+            LOGGER.info("usage is: %n"
+                + " - path%n"
+                + " - filename%n"
+                + " - title%n"
+                + " - version%n"
+                + " - contact name%n"
+                + " - contact email%n"
+                + " - url%n"
+                + " - terms%n"
+                + " %n");
         }
     }
 
-    private static void handleApiDocsArguments(String[] args) {
+    private static void handleApiDocsArguments(String... args) {
         apiDocsPath = args[0] != null ? args[0] : API_DOCS_PATH;
         apiDocsFileName = args[1] != null ? args[1] : API_DOC_FILENAME;
     }
 
-    private static void configureApiDocs(String[] args) {
+    private static void configureApiDocs(String... args) {
         BeanConfig beanConfig = new BeanConfig();
         Info info = new Info();
         info.setTitle(getTitle(args[2]));

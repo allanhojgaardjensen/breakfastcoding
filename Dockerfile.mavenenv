@@ -1,0 +1,27 @@
+# Configuration for deploy the greeting service in a maven based docker container setup
+#   - using port 8080 as port and exposing that to docker host port 8080
+# ------------------------------------------------------------------------------------------------
+# build the image as:      docker image build . -t greeting-rest-service -f Dockerfile.mavenenv
+# start the container as:  docker container run -p 8080:8080 -t -i greeting-rest-service
+# ------------------------------------------------------------------------------------------------
+# fetch basic image
+FROM maven:3.5-jdk-8
+
+# application placed into /opt/app
+RUN mkdir -p /opt/app
+WORKDIR /opt/app
+
+# selectively add the POM file and
+# install dependencies
+COPY pom.xml /opt/app/
+RUN mvn install
+
+# rest of the project
+COPY src /opt/app/src
+RUN mvn package
+
+# local application port
+EXPOSE 8080
+
+# execute it
+CMD ["mvn", "exec:java@start-server"]

@@ -8,9 +8,9 @@
     <name>greeting-rest-service</name>
     <description>
         The Greeting REST service is a very simple example that serves two purposes.
-        The first is to work in relation with hands-on workshops for development of
-        simple REST services, the other purpose is to develop into being a part of 
-        a turnkey solution, where this in its final state will be an example REST 
+        The first hands-on workshops for development of simple REST services.
+        The second purpose is to be used in relation with a part of a turnkey 
+        template solution, where this in its final state will be an example REST 
         service. 
     </description>
     <url>
@@ -23,14 +23,19 @@
         </developer>    
     </developers> 
     <properties>
-        <jersey.version>2.26-b09</jersey.version>
-        <junit.version>4.12</junit.version>
         <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <checkstyle.version>7.8.2</checkstyle.version>
+        <findbugs.version>3.0.4</findbugs.version>
+        <jacoco.version>0.7.9</jacoco.version>
+        <jdk.version>1.8</jdk.version>
+        <jersey.version>2.26-b09</jersey.version>
+        <junit.version>4.12</junit.version>
+        <dependency.locations.enabled>false</dependency.locations.enabled>
+        <maven.jxr.version>2.5</maven.jxr.version>
         <open.api.2.version>1.5.12</open.api.2.version>
         <open.api.plugin.version>1.0.0</open.api.plugin.version>
+        <pmd.plugin.version>3.8</pmd.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <dependency.locations.enabled>false</dependency.locations.enabled>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.info.reportsplugin.version>2.9</project.info.reportsplugin.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -96,6 +101,11 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jxr-plugin</artifactId>
+                    <version>${maven.jxr.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${checkstyle.plugin.version}</version>
                     <dependencies>
@@ -104,7 +114,32 @@
                             <artifactId>checkstyle</artifactId>
                             <version>${checkstyle.version}</version>
                         </dependency>
+                        <dependency>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>jcl-over-slf4j</artifactId>
+                            <version>1.7.5</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-jdk14</artifactId>
+                            <version>1.7.5</version>
+                        </dependency>
                     </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-pmd-plugin</artifactId>
+                    <version>${pmd.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>findbugs-maven-plugin</artifactId>
+                    <version>${findbugs.version}</version>
+                </plugin>                
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${jacoco.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -116,8 +151,8 @@
                 <version>3.6.2</version>
                 <inherited>true</inherited>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -154,7 +189,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${checkstyle.plugin.version}</version>
                 <configuration>
                     <configLocation>config/checks.xml</configLocation>
                     <failOnViolation>true</failOnViolation>
@@ -172,7 +206,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jxr-plugin</artifactId>
-                <version>2.5</version>
             </plugin>       
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -203,6 +236,96 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.coderplus.maven.plugins</groupId>
+                <artifactId>copy-rename-maven-plugin</artifactId>
+                <version>1.0</version>
+                <executions>
+                    <execution>
+                        <id>create-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <sourceFile>${project.build.directory}/shaded-${project.artifactId}-${project.version}.jar</sourceFile>
+                            <destinationFile>${project.build.directory}/shaded-${project.artifactId}-${project.version}.zip</destinationFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>            
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/ResponseDoc*</exclude>
+                        <exclude>**/HeaderParameter*</exclude>
+                        <exclude>**/HeaderDocs*</exclude>
+                        <exclude>**/OpenAPIListener*</exclude>
+                        <exclude>**/APIDocsGenerator*</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${pmd.plugin.version}</version>
+                <configuration>
+                    <rulesets>
+                        <!-- ruleset>https://raw.githubusercontent.com/cppdk/greeting-rest-service/master/config/pmd.xml</ruleset -->
+                        <ruleset>config/pmd.xml</ruleset>
+                    </rulesets>
+                    <targetJdk>${jdk.version}</targetJdk>
+                    <includes>
+                        <include>**/com/example/**/*.java</include>
+                    </includes>
+                    <excludes>
+                    </excludes>
+                    <excludeRoots>
+                    </excludeRoots>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>pmd</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>pmd</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <configuration>
+                    <onlyAnalyze>com.example.-</onlyAnalyze>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>findbugs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>findbugs</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <reporting>
@@ -212,6 +335,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${checkstyle.plugin.version}</version>
                 <configuration>
+                    <!-- configLocation>https://raw.githubusercontent.com/cppdk/greeting-rest-service/master/config/checks.xml</configLocation -->
                     <configLocation>config/checks.xml</configLocation>
                 </configuration>
             </plugin>
@@ -226,7 +350,41 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jxr-plugin</artifactId>
-                <version>2.5</version>
+                <version>${maven.jxr.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/ResponseDoc*</exclude>
+                        <exclude>**/HeaderParameter*</exclude>
+                        <exclude>**/HeaderDocs*</exclude>
+                        <exclude>**/OpenAPIListener*</exclude>
+                        <exclude>**/APIDocsGenerator*</exclude>
+                    </excludes>
+                    <append>true</append>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>${pmd.plugin.version}</version>
+                <configuration>
+                    <linkXref>true</linkXref>
+                    <sourceEncoding>utf-8</sourceEncoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>${findbugs.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.0.0-M1</version>
             </plugin>
         </plugins>
     </reporting>

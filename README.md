@@ -1,3 +1,8 @@
+# greeting-rest-service
+
+ [![status](https://travis-ci.org/allanhojgaardjensen/breakfastcoding.svg?branch=master)](https://travis-ci.org/allanhojgaardjensen/breakfastcoding) 
+ [![coverage](https://codecov.io/gh/allanhojgaardjensen/breakfastcoding/coverage.svg?branch=master)](https://codecov.io/gh/allanhojgaardjensen/breakfastcoding)
+
 # Breakfast Code
 
 This is an example of a REST service which starts in a non-optimal way and then during a series of changes evolves and starts being able to handle versions 
@@ -20,64 +25,119 @@ and find page 23 where the description of the first feature can be found.
 
 This section is about reflecting over the code as it is now, looking at the implemented feature.
 Furthermore looking back at the experiences you had during the implementation.
-Please comment if you experienced other things during your implementation of the "Add API Documentation" feature.
+Please comment if you experienced other things during your implementation of the 
+"Automate Build and Start optimizing Bandwidth" feature.
 
-The Open API specification in this more elaborate edition can be found in the target/api folder.
-The YAML file can be opened in editor.swagger.io and apiary.io and the API viewed there.
+We see that a response `200 OK` returned if the consumer has an outdated version. If the consumer includes the 
+`If-Modified-Since` and `If-None-Match` a `304 Not Modified` is returned - if the consumer already have the relevant object locally.
 
-Annotations like e.g. ApiOperation etc. is still in the code, and the extended service API specification
-is generated as a part of the build. If you view the generated specification in swagger editor and apiary,
-you will see a more detailed OpenAPI specification now. 
+The implementation uses a [fixed timestamp](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L367) 
+(which is unreal - it makes it easier to see the two parts of the optimization, (when demonstrating). The two sides are the temporally based 
+_If-Modified-Since_ aspect and the content/state based _If-None-Match_ aspect). 
+If the values for the current object is delivered from the client as headers in the request and both are 
+the same as the service knows a [`304 Not Modified`](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L165) is returned. Otherwise the [modified objects](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L167) 
+is returned and thus no bandwidth is wasted on retransmitting objects across the wire. In this case the objects are small, but in a real life scenario, that matters. 
 
-As mentioned previously, the development speed of the service is important and the complexity should not 
-be within the documentation of the service, that should be with the services and the ability to allow for 
-individual consumers to catch up on service content versions in their own pace. There is more to it than 
-versioning, the consumers needs to be aware of what they can expect from the service. 
-Thus in order to create the best situation for the service itself, it is necessary to prepare 
-the consumers for the responses that might occur. If a service does not specify a 301, the 
-consumer may not prepare for that response and that will be perceived as an error.
-Even the 301 is standard part of the HTTP specification, the perception of error is the result.
+Outdated means either content has changed or the the timestamp for the object is 
+newer that what the consumer has indicated as last time for the object in question.
+A word of caution here is: 
+The detection of the last modified and the [entity-tag calculation](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L162) should be very 
+easy to get, if you have to load an object (possible via an internal model - 
+persistency etc.) it may be better just to return the object if small, 
+otherwise keep a tuple allowing you to see the key::resource and its (entity-tag, 
+last modified) in a map in mem lazy-loaded and tracking a feed on updates to resources.
 
-The implementation of the automated and elaborated API documentation and there are a number 
-of responses that are relevant to signal to a consumer, using the OpenAPI specification, 
-in order to prepare the consumer  for 301, 202, 415, .... responses etc. and 
-specifying which headers accompanies these responses and what do they mean. 
+Furthermore a logtoken (aka correlation id) can be specified from the client side 
+using the `X-Log-Token` request header, thus making it easier to communicate with 
+the consumer in situations, where it is necessary to look for errors etc in logs 
+across domains and consumer infrastructure and service implementor infrastructure.
+The service offers the opportunity for a consumer to state an id with the granularity desired from the consumer side. If a log/error self-service is something offered, the consumer developers can easily correlate with what they have and make that as useful for them as they need. 
+If unspecified from the consumer side [a token is drawn](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L339) and may be used onwards if 
+the consuming chooses to use that going forward, otherwise a new token is drawn on 
+every request.
 
-Why not just include all possible responses not included in the generated specification and make
-the consumers prepare for everything? This would not really be service oriented and there needs 
-to be a balance for what you anticipate is a realistic response you are going to use either now or
-in a future not too far away from now. 
-Everyone has to figure out what their needs are in relation to responses and headers for an 
-endpoint or service, and what could the general set you would include as a function of e.g. verb as done here.
-The important part is that it is possible to signal to consumers what they can expect 
-and what responses they need to be able to react to.
+On the service build and infrastructure side, reports have been added on source, 
+source-doc, coverage, bug and code smells as well as at the “project level”.
+Maven site includes checkstyle, PMD, FindBugs and JaCoCo Coverage, Source Code listings, JavDoc and misc. project reportings on dependencies and convergence etc.
+There are things is these reports will be optimized before the coding session is over. You find the start link for the reports after you have run the complete build as shown underneath under _Useful Commands_ and open a browser in _target/site_ and point to _index.html_ - the elaborated OpenAPI specification can still be found under _target/api_.
 
-Whether this example is including too much or not is definitely a topic worth discussing.
-I have included a set of predefined request headers together with a set of general 
-responses and verb specific responses. If these had to be included in the code, 
-that would have cluttered the code significantly.
+The versions are preserved as the existing consumers are capable to continue, 
+on each their current version or move to the newest version.
+
+All consumers using “application/hal+json” for their “Accept” header value are 
+moved along with the newest edition of the content for that endpoint in the service. 
+Whereas they can individually fall-back to previous version using the  
+“application/hal+json;concept=greeting;v={version}” in their Accept header.
+
+### What have we learned sofar?
+An initial mess always (I am sorry for that) complicates things, having an unclear 
+semantics and improper use of semantics whilst having consumers using services 
+will slow us down going forward.
+This is a very simple service with an unreal simple implementation, we did not 
+really invest a lot in semantics, but the last couple of features brought us the 
+ability to move the /greetings/{greeting} resource faster forward, whilst being 
+somewhat more stuck with the /greetings resource as the first feature was a 
+serious mistake and work needs to be done to get rid of that asap.
+
  
-### The Feature "Automate build and Start Optimizing Bandwidth" - see slides page 51+
+### The Feature "Create new Greetings" - see slides page 59+
 
-The greeting service now have some elaborated documentation, that can be viewed in tools 
-understanding OpenAPI specification version 2. The reality is that the service does not 
-use any form of optimization e.g. not returning content to the consumers, when they 
-already have the newest version.  
+The service is a really dull service, and a fixed set of greetings in English 
+and Danish is not going to make that service relevant for anyone for a long time.
+Thus we want to be able to create new greetings. In this example service we will 
+use the same format for the body of the POSTs although this would not be the case 
+in a real service. In a real service the links would not be specified from the 
+client the title however would have to be, thus for the sake of simplicity in this 
+case the same format was chosen.
 
-The feature targets having the ability to only return e.g. currently we may cache 
-for a long time as no new instances of greetings can be made yet, and thus we will 
-start by delivering a [ETag](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.19) 
-value back that the client can present to the service endpoint and thus the service endpoint 
-implementation can know whether to return a version to the consumer or signal back that the 
-consumer already has the correct version.
+#### Examples
 
+The greeting used underneath is a Danish sailor greeting as a tribute to the 
+international "Talk like a Pirate Day" which is the 19th of September every year.
 
-The greeting list continues to return a list of greetings for consumers accepting "application/hal+json" and the greetings themselves remains detailed as explicit resources.
-
-The greeting list continues to return a list of greetings for consumers accepting "application/hal+json" and the greetings themselves remains detailed as explicit resources.
+_A consumer preferring English would POST to greetings_
 
 
-# greeting-rest-service
+````json
+{
+  "greeting": "Ohøj!",
+  "language": "Dansk",
+  "country": "Danmark",
+  "native": {
+    "language": "Danish",
+    "country": "Denmark"
+  },
+  "_links": {
+    "self": {
+      "href": "greetings/ohoj",
+      "title": "Danish Greeting Ohoj"
+    }
+  }
+}
+
+````  
+
+_A consumer preferring Danish would POST to greetings_
+
+````json
+{
+  "greeting": "Ohøj!",
+  "language": "Dansk",
+  "country": "Danmark",
+  "native": {
+    "language": "Dansk",
+    "country": "Danmark"
+  },
+  "_links": {
+    "self": {
+      "href": "greetings/ohoj",
+      "title": "Dansk Hilsen Ohøj"
+    }
+  }
+}
+
+````  
+
 
 ## Introduction
 
@@ -85,6 +145,7 @@ A simple rest service that is developed towards being able to greet you in a
 number of languages. Currently it will only greet you with a "Hallo" which is
 the Danish, Swedish or Norwegian way to say "Hello". Currently it is perceived
 as a Danish greeting and the only supported greetings are Danish and English.
+We are approaching a version where it is possible to create other greetings.
 
 ## Worth Noticing
 
@@ -119,24 +180,28 @@ Useful Commands
 ---------------
 To Build this project:
 
-    mvn package
+    mvn verify
 
 To clean an existing checkout and build:
 
-    mvn clean package
+    mvn clean verify
 
 To clean an existing checkout, build and generate API docs:
 
-    mvn clean package exec:java@api-docs
+    mvn clean verify exec:java@api-docs
 
 To run the REST Server standalone:
 
     mvn exec:java@start-server 
 
+To build, generate site, API docs and run the REST Server standalone:
+
+    mvn clean verify exec:java@api-docs site exec:java@start-server 
+
 To test the REST service use e.g. Postman:
     
     GET http://localhost:8080/greetings
-    having set Accept "application/json"
+
     and get a response 200 OK back, with 
      - Headers 
           content-length: 21
@@ -147,7 +212,7 @@ To test the REST service use e.g. Postman:
 To test the REST service greeting in English:
 
     GET http://localhost:8080/greetings
-    having set Accept-Language "en" and Accept "application/json"
+    having set Accept-Language "en"
 
     and get a response 200 OK back, with 
      - Headers 
@@ -156,11 +221,11 @@ To test the REST service greeting in English:
      - Body:
             { "greeting": "Hello!" }
 
-To test the REST service greeting List:
 
     GET http://localhost:8080/greetings
     having set Accept-Language "en" and
-    having set Accept "application/hal+json"    
+    having set Accept "application/hal+json"
+    
     and get a response 200 back with
 
     - Headers:
@@ -191,197 +256,29 @@ To test the REST service greeting List:
         content-type: application/hal+json        
 
     - Body:
-        {
-            "greetings": {
-                "info": "a list containing current greetings",
-                "_links": {
-                    "self": {
-                        "href": "/greetings",
-                        "type": "application/hal+json;concept=greeetinglist;v=1",
-                        "title": "List of Greetings"
-                    },
-                    "greetings": [
-                        {
-                            "href": "/greetings/hallo",
-                            "title": "Danish Greeting - Hallo"
+            {
+                "greetings": {
+                    "info": "a list containing current greetings",
+                    "_links": {
+                        "self": {
+                            "href": "/greetings",
+                            "type": "application/hal+json;concept=greeetinglist;v=1",
+                            "title": "List of Greetings"
                         },
-                        {
-                            "href": "/greetings/hello",
-                            "title": "English Greeting - Hello"
-                        }
-                    ]
+                        "greetings": [
+                            {
+                                "href": "/greetings/hallo",
+                                "title": "Danish Greeting - Hallo"
+                            },
+                            {
+                                "href": "/greetings/hello",
+                                "title": "English Greeting - Hello"
+                            }
+                        ]
+                    }
                 }
             }
-        }
 
-To test the REST service greetings `hello` resource in English:
-
-    GET greetings/hello 
-    having set Accept-Language "en" and Accept "application/hal+json" or "application/hal+json;concept=greeting;v=2" or "application/hal+json;concept=greeting"
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 223
-          content-type: application/hal+json;concept=greeting;v=2
-     - Body:
-    {
-        "greeting": "Hello!",
-        "language": "English",
-        "country": "England",
-        "native": {
-            "language": "English",
-            "country": "England"
-        },
-        "_links": {
-            "href": "/greetings/hello",
-            "title": "English Greeting Hello"
-        }
-    }
-
-To test the REST service greetings `hello` resource in Danish:
-
-    GET greetings/hello 
-    having set Accept-Language "da" and Accept "application/hal+json" or "application/hal+json;concept=greeting;v=2" or "application/hal+json;concept=greeting"
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 221
-          content-type: application/hal+json;concept=greeting;v=2
-     - Body:
-    {
-        "greeting": "Hello!",
-        "language": "English",
-        "country": "England",
-        "native": {
-            "language": "Engelsk",
-            "country": "England"
-        },
-        "_links": {
-            "href": "/greetings/hello",
-            "title": "Engelsk Hilsen Hello"
-        }
-    }
-
-
-To test the REST service greetings `hallo` resource in English:
-
-    GET greetings/hallo 
-    having set Accept-Language "en" and Accept "application/hal+json" or "application/hal+json;concept=greeting;v=2" or "application/hal+json;concept=greeting"
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 219
-          content-type: application/hal+json;concept=greeting;v=2
-     - Body:
-    {
-        "greeting": "Hallo!",
-        "language": "Dansk",
-        "country": "Danmark",
-        "native": {
-            "language": "Danish",
-            "country": "Denmark"
-        },
-        "_links": {
-            "href": "/greetings/hallo",
-            "title": "Danish Greeting Hallo"
-        }
-    }
-
-To test the REST service greetings `hallo` resource in Danish:
-
-    GET greetings/hallo having set Accept-Language "da" and Accept "application/hal+json" or "application/hal+json;concept=greeting;v=2" or "application/hal+json;concept=greeting"
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 215
-          content-type: application/hal+json;concept=greeting;v=2
-     - Body:
-    {
-        "greeting": "Hallo!",
-        "language": "Dansk",
-        "country": "Danmark",
-        "native": {
-            "language": "Dansk",
-            "country": "Danmark"
-        },
-        "_links": {
-            "href": "/greetings/hallo",
-            "title": "Dansk Hilsen Hallo"
-        }
-    }
-
-
-To test the REST service greetings `hello` resource in English from previous version in same endpoint:
-
-    GET http://localhost:8080/greetings/hello
-    having set Accept-Language "en" and Accept "application/hal+json;concept=greeting;v=1"
-
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 127
-          content-type: application/hal+json;concept=greeting;v=1
-     - Body:
-        {
-            "greeting": "Hello!",
-            "country": "GB",
-            "_links": {
-                "href": "/greetings/hello",
-                "title": "English Greeting Hallo"
-            }
-        }
-
-To test the REST service greetings `hello` resource in Danish from previous version in same endpoint:
-
-    GET http://localhost:8080/greetings/hello
-    having set Accept-Language "da" and Accept "application/hal+json;concept=greeting;v=1"
-
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 125
-          content-type: application/hal+json;concept=greeting;v=1
-     - Body:
-        {
-            "greeting": "Hello!",
-            "country": "GB",
-            "_links": {
-                "href": "/greetings/hello",
-                "title": "Engelsk Hilsen Hello"
-            }
-        }
-
-To test the REST service greetings `hallo` resource in English from previous version in same endpoint:
-
-    GET http://localhost:8080/greetings/hallo
-    having set Accept-Language "en" and Accept "application/hal+json;concept=greeting;v=1"
-
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 126
-          content-type: application/hal+json;concept=greeting;v=1
-     - Body:
-        {
-            "greeting": "Hallo!",
-            "country": "DK",
-            "_links": {
-                "href": "/greetings/hallo",
-                "title": "Danish Greeting Hallo"
-            }
-        }
-
-To test the REST service greetings `hallo` resource in Danish from previous version in same endpoint:
-
-    GET http://localhost:8080/greetings/hallo
-    having set Accept-Language "da" and Accept "application/hal+json;concept=greeting;v=1"
-
-    and get a response 200 OK back, with 
-     - Headers 
-          content-length: 123
-          content-type: application/hal+json;concept=greeting;v=1
-     - Body:
-        {
-            "greeting": "Hallo!",
-            "country": "DK",
-            "_links": {
-                "href": "/greetings/hallo",
-                "title": "Dansk Hilsen Hallo"
-            }
-	}
 
 ## The uber-jar
 

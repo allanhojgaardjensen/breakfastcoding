@@ -1,6 +1,8 @@
 package com.example.service.api;
 
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.swagger.models.Operation;
 import io.swagger.models.Path;
@@ -9,11 +11,14 @@ import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 
 
+
 /**
- * adds response documentation to an operation in an Open API manner
+ * Adds response documentation to an operation in an Open API manner
  */
-public class ResponseDoc {
+public final class ResponseDoc {
     
+    private static final Logger LOGGER = Logger.getLogger(ResponseDoc.class.getName());
+
     private ResponseDoc() {
         // intentionally empty
     }
@@ -89,7 +94,7 @@ public class ResponseDoc {
     }
 
     private static void addPatchStandardResponses(Operation patch) {
-        //nothing added to the patch verb yet.
+        LOGGER.log(Level.INFO, "Operation was not implemented yet", patch);
     }
 
     private static void addOKResponse200(Operation operation) {
