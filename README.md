@@ -23,84 +23,108 @@ and find page 23 where the description of the first feature can be found.
 
 ### Findings from the implementation of the previous feature
 
-This section is about reflecting over the code as it is now, looking at the implemented feature.
-Furthermore looking back at the experiences you had during the implementation.
-Please comment if you experienced other things during your implementation of the 
-"Automate Build and Start optimizing Bandwidth" feature.
+It is now possible to create a greeting and see that in the greeting list. 
+Once you created a greeting by POSTing to /greetings you will see where the greeting
+was created in the `201 Created` response containing the `Location` header.
 
-We see that a response `200 OK` returned if the consumer has an outdated version. If the consumer includes the 
-`If-Modified-Since` and `If-None-Match` a `304 Not Modified` is returned - if the consumer already have the relevant object locally.
+In other words, we see that a response from a POST new greeting returns a 201 created in the event 
+of a successful create and it includes a Location header informing the consumer 
+about the whereabouts of the newly created greeting.
+Furthermore we see that a 400 Bad Request is returned if the request was malformed.
 
-The implementation uses a [fixed timestamp](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L367) 
-(which is unreal - it makes it easier to see the two parts of the optimization, (when demonstrating). The two sides are the temporally based 
-_If-Modified-Since_ aspect and the content/state based _If-None-Match_ aspect). 
-If the values for the current object is delivered from the client as headers in the request and both are 
-the same as the service knows a [`304 Not Modified`](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L165) is returned. Otherwise the [modified objects](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L167) 
-is returned and thus no bandwidth is wasted on retransmitting objects across the wire. In this case the objects are small, but in a real life scenario, that matters. 
-
-Outdated means either content has changed or the the timestamp for the object is 
-newer that what the consumer has indicated as last time for the object in question.
-A word of caution here is: 
-The detection of the last modified and the [entity-tag calculation](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L162) should be very 
-easy to get, if you have to load an object (possible via an internal model - 
-persistency etc.) it may be better just to return the object if small, 
-otherwise keep a tuple allowing you to see the key::resource and its (entity-tag, 
-last modified) in a map in mem lazy-loaded and tracking a feed on updates to resources.
-
-Furthermore a logtoken (aka correlation id) can be specified from the client side 
-using the `X-Log-Token` request header, thus making it easier to communicate with 
-the consumer in situations, where it is necessary to look for errors etc in logs 
-across domains and consumer infrastructure and service implementor infrastructure.
-The service offers the opportunity for a consumer to state an id with the granularity desired from the consumer side. If a log/error self-service is something offered, the consumer developers can easily correlate with what they have and make that as useful for them as they need. 
-If unspecified from the consumer side [a token is drawn](https://github.com/allanhojgaardjensen/breakfastcoding/blob/master/src/main/java/com/example/resource/greeting/Greeting.java#L339) and may be used onwards if 
-the consuming chooses to use that going forward, otherwise a new token is drawn on 
-every request.
-
-On the service build and infrastructure side, reports have been added on source, 
-source-doc, coverage, bug and code smells as well as at the “project level”.
-Maven site includes checkstyle, PMD, FindBugs and JaCoCo Coverage, Source Code listings, JavDoc and misc. project reportings on dependencies and convergence etc.
-There are things is these reports will be optimized before the coding session is over. You find the start link for the reports after you have run the complete build as shown underneath under _Useful Commands_ and open a browser in _target/site_ and point to _index.html_ - the elaborated OpenAPI specification can still be found under _target/api_.
-
-The versions are preserved as the existing consumers are capable to continue, 
-on each their current version or move to the newest version.
-
-All consumers using “application/hal+json” for their “Accept” header value are 
-moved along with the newest edition of the content for that endpoint in the service. 
-Whereas they can individually fall-back to previous version using the  
-“application/hal+json;concept=greeting;v={version}” in their Accept header.
-
-### What have we learned sofar?
-An initial mess always (I am sorry for that) complicates things, having an unclear 
-semantics and improper use of semantics whilst having consumers using services 
-will slow us down going forward.
-This is a very simple service with an unreal simple implementation, we did not 
-really invest a lot in semantics, but the last couple of features brought us the 
-ability to move the /greetings/{greeting} resource faster forward, whilst being 
-somewhat more stuck with the /greetings resource as the first feature was a 
-serious mistake and work needs to be done to get rid of that asap.
-
+Recreation of the same object is allowed in the current version and thus there is 
+no way for the consumer to see if the initial create went well or not, unless the 
+consumer does a GET to a location the consumer guesses is the place for the 
+newly created greeting and reacts to a not found. This would be a good thing to 
+address in a later feature. This may however cause a real problem for consumers that 
+are adopting the possibility to recreate/replace using POST. In a real service, that 
+would not be recommend to allow for a functionality and then restrict that away 
+afterwards.
  
-### The Feature "Create new Greetings" - see slides page 59+
+We see that a successfully created greeting is now part of the greetings list.
+If stop for a moment and looks at the semantics here, is it ok to have greetings 
+posing as separate objects, where language is the differentiator or not.
+The code looks different, the objects are no longer Strings they are real objects 
+in the implementation, although very simple ones. The objects capable of creating 
+resulting json are postfixed Representation. They are not the internal model of a 
+service, they are merely representing a given view or projection, that is signaled 
+by the content parameter concept={view/projection} and currently that is version 3
+ of the content ;v=3 in the endpoint /greetings/{greeting}
 
-The service is a really dull service, and a fixed set of greetings in English 
-and Danish is not going to make that service relevant for anyone for a long time.
-Thus we want to be able to create new greetings. In this example service we will 
-use the same format for the body of the POSTs although this would not be the case 
-in a real service. In a real service the links would not be specified from the 
-client the title however would have to be, thus for the sake of simplicity in this 
-case the same format was chosen.
+We see that the implementation of the initial implementation of
+		 /greetings/{greeting} 
+for version 1 has become deprecated. As deprecation in the code requires service 
+consuming developers to look at the service implementation documentation (javaDoc in this case)
+and stating deprecation as a text in a service specification, requires the developers 
+to look into the Open API specification and take care of that - or build a compliance 
+check into the build pipeline checking for deprecated in the API. So no standardized way 
+to inform about that and certainly no dynamic way to inform the consuming application 
+about that in real time. We use “X-Status” response header is used for that. 
+The observation of `X-Status: deprecated` could be automated into the consumer 
+application and a ticket could be raised in their issue backlog in order for them to 
+do something about that, or to make the support last a little longer by requesting that 
+from the service provider.
+
+Furthermore we are running “2 version overlap” and that means we have 3 versions active right now, 
+when we change and deprecate the oldest. You can run any overlapping # of versions, and they do 
+have to be the latest versions.
+ 
+If you have very important consumers you may want to keep some of the older versions 
+and have them available still, this is somewhat similar to continuing to run old releases. 
+You may run them in the same service implementation for a while, with a goal for them to 
+be separated or the consumers upgraded. If that is not happening and it becomes a burden 
+it is possible to split the service. 
+
+The X-Service-Generation header can be used for that purpose and used for segmentation.
+
+Very simple “just enough” implementations of HAL has been made and the application/hal+json 
+is finally appropriate to be used, there are libraries out there that can be used to map 
+Representations between Objects and HAL, see HAL information. HAL in the form of 
+application/hal+json is an informational standard.
+
+
+Caution:
+Normally you would use the libraries, the “just enough” implementation her is just 
+to show the mapping as simple as possible. There are limitations to the implementation 
+done here such as not support for array or object, this only supports object. 
+This simple implementation is replaced later in the breakfast coding session.
+
+Btw:
+Did you have issues handling the “native” object as `native` is a reserved keyword
+ in java and thus it needs some form of mapping. This was chosen as a way to 
+illustrate that sometimes you will run into thing that are platform implementation 
+specifics and there will usually be a way round that.
+
+When you look at the code at this stage you will properly have seen, it is rapidly on 
+its way to become a mess. This is entirely my fault, due to a number of bad decisions 
+and lack of accuracy in requiring headers being set and correctness in  using HAL etc. 
+I created a situation, where the code inside the service get cluttered, despite 
+the efforts made to exclude a big portion of the annotations.
+
+So we will do a clean up whilst moving forward - however in a real life setup - 
+that would take long time to get away with that having multiple consumers onboard. 
+
+
+### The Feature "Direct Create new and Replace existing Greetings" - see slides page 68+
+
+The service is still a relative dull service, it is now possible to create a new
+greeting, we want to be ready for doing replaces of greetings and possibly create 
+new greetings directly under greetings/{new greeting}. The PUT verb is probably the 
+best suited for that purpose.
+
+The initial PUT must return a 201 Created with a Location Header, an attempt to 
+recreate/replace the greeting must return a 200 OK. The previously implemented 
+possibility to recreate using POST must not be possible going forward.
 
 #### Examples
 
-The greeting used underneath is a Danish sailor greeting as a tribute to the 
-international "Talk like a Pirate Day" which is the 19th of September every year.
+The greeting used underneath is a Danish greeting used in the southern part.
 
-_A consumer preferring English would POST to greetings_
-
+_A consumer preferring English would PUT to greetings/mojn_
 
 ````json
 {
-  "greeting": "Ohøj!",
+  "greeting": "Møjn!",
   "language": "Dansk",
   "country": "Danmark",
   "native": {
@@ -109,19 +133,18 @@ _A consumer preferring English would POST to greetings_
   },
   "_links": {
     "self": {
-      "href": "greetings/ohoj",
-      "title": "Danish Greeting Ohoj"
+      "href": "greetings/mojn",
+      "title": "Danish Greeting Mojn"
     }
   }
 }
-
 ````  
 
-_A consumer preferring Danish would POST to greetings_
+_A consumer preferring Danish would PUT to greetings/mojn_
 
 ````json
 {
-  "greeting": "Ohøj!",
+  "greeting": "Møjn!",
   "language": "Dansk",
   "country": "Danmark",
   "native": {
@@ -130,8 +153,8 @@ _A consumer preferring Danish would POST to greetings_
   },
   "_links": {
     "self": {
-      "href": "greetings/ohoj",
-      "title": "Dansk Hilsen Ohøj"
+      "href": "greetings/mojn",
+      "title": "Dansk Hilsen Møjn"
     }
   }
 }
@@ -142,14 +165,11 @@ _A consumer preferring Danish would POST to greetings_
 ## Introduction
 
 A simple rest service that is developed towards being able to greet you in a 
-number of languages. Currently it will only greet you with a "Hallo" which is
-the Danish, Swedish or Norwegian way to say "Hello". Currently it is perceived
-as a Danish greeting and the only supported greetings are Danish and English.
-We are approaching a version where it is possible to create other greetings.
+number of languages.
 
 ## Worth Noticing
 
-The initial resource "/greetings" is now only supported using a 
+The initial resource "/greetings" is still supported however only using a 
   
     application/json
 
@@ -159,17 +179,26 @@ a period of time for compliancy by setting the Accept header to
     application/hal+json
 
 This is mainly done to show how coexistence thus moving along is possible. 
-Furthermore the resource "/greetings/{greeting}" is now made with the content
-version scheme using "application/hal+json" as producer content-type and 
-showing how to use the actual version of content. 
 
-    application/hal+json;concept=greeting;v=1
+The resource "/greetings/{greeting}" using the content version scheme using 
+"application/hal+json" as producer content-type and showing how to use the 
+actual version of content, which is now. 
 
-if a consumer has the need to go back to that version, once a version 2 e.g. 
+    application/hal+json;concept=greeting;v=3
+
+if a consumer has the need to go back to a previous version, once a version 2 e.g. 
 
     application/hal+json;concept=greeting;v=2
 
-is created in a near future.
+Please not that the earliest version has been deprecated here
+
+    application/hal+json;concept=greeting;v=1
+
+If a consumer calls the service and uses _application/hal+json;concept=greeting;v=1_ in the _Accept_ header
+the response contains a `X-Status` `deprecated` in order to signal to the consumer that the support for this
+version is about to end at some time. The consumer can then make a request through the issue ticketing 
+system at the service implementor to get a potential prolonged support for that service.
+
 
 ## Working with the service
 
@@ -206,6 +235,7 @@ To test the REST service use e.g. Postman:
      - Headers 
           content-length: 21
           content-type: application/json
+          X-Status : deprecated
      - Body:
             { "greeting": "Hallo!" }
 
@@ -218,9 +248,136 @@ To test the REST service greeting in English:
      - Headers 
           content-length: 21
           content-type: application/json
+          X-Status : deprecated
      - Body:
             { "greeting": "Hello!" }
 
+To test the REST service use e.g. Postman:
+    
+    GET http://localhost:8080/greetings/hallo
+    having set Accept-Language "da" and
+    having set Acccept "application/hal+json" 
+        or set to "application/hal+json;concept=greeting" 
+        or set to "application/hal+json;concept=greeting;v=3"
+    having set X-Log-Token "my-correlation-id"
+
+    and get a response 200 OK back, with 
+     - Headers 
+            content-length: 184
+            content-type: application/hal+json;concept=greeting;v=3
+            etag : e5ef5d41
+            last-modified: Fri, 15 Sep 2017 18:26:40 GMT (still fixed)
+            X-Log-Token: "my-correlation-id"
+ 
+    - Body:
+            {
+                "greeting": "Hallo!",
+                "language": "Dansk",
+                "country": "Danmark",
+                "native": {
+                    "language": "Dansk",
+                    "country": "Danmark"
+                },
+                "_links": {
+                    "self": {
+                        "href": "greetings/hallo",
+                        "title": "Dansk Hilsen Hallo"
+                    }
+                }
+            }
+
+To test the REST service greeting in English:
+
+    GET http://localhost:8080/greetings/hallo
+    having set Accept-Language "da" and
+    having set Acccept "application/hal+json" 
+        or set to "application/hal+json;concept=greeting" 
+        or set to "application/hal+json;concept=greeting;v=3"
+    having set X-Log-Token "noget-vi-kender"
+
+    and get a response 200 OK back, with 
+     - Headers 
+          content-length: 188
+          content-type: application/hal+json;concept=greeting;v=3
+          etag: cea7c755
+          X-Status : deprecated
+          last-modified: Fri, 15 Sep 2017 18:26:40 GMT (still fixed)
+          X-Log-Token: "noget-vi-kender"
+     - Body:
+            {
+                "greeting": "Hallo!",
+                "language": "Dansk",
+                "country": "Danmark",
+                "native": {
+                    "language": "Danish",
+                    "country": "Denmark"
+                },
+                "_links": {
+                    "self": {
+                        "href": "greetings/hallo",
+                        "title": "Danish Greeting Hallo"
+                    }
+                }
+            }
+
+To create a greeting
+
+    POST http://localhost:8080/greetings
+    having set Accept-Language "en" and
+    having set Accept "application/hal+json"
+    having set Content-Type "application/json"
+    and having request body set to:
+            {
+              "greeting": "Ohøj!",
+              "language": "Dansk",
+              "country": "Danmark",
+              "native": {
+                "language": "Danish",
+                "country": "Denmark"
+              },
+              "_links": {
+                "self": {
+                  "href": "greetings/ohoj",
+                  "title": "Danish Greeting Ohoj"
+                }
+              }
+            }
+
+    and get a response 201 back with
+
+    - Headers:
+        access-control-allow-headers: 
+            Content-Type, 
+            Authorization, 
+            If-Match, 
+            If-None-Match, 
+            X-Log-Token, 
+            X-Client-Version, 
+            X-Client-ID, 
+            X-Service-Generation, 
+            X-Requested-With
+
+        access-control-allow-methods: GET, POST, DELETE, PUT, PATCH, OPTIONS, HEAD
+        access-control-allow-origin: *
+        access-control-expose-headers: 
+            Location, 
+            Retry-After,    
+            Content-Encoding, 
+            ETag, 
+            X-Log-Token,
+            X-Status, 
+            X-RateLimit-Limit, 
+            X-RateLimit-Limit24h, 
+            X-RateLimit-Remaining, 
+            X-RateLimit-Reset
+        content-length: 0
+        location: http://localhost:8080/greetings/ohoj
+        X-Log-Token: some UUID 
+
+    - Body:
+        (empty)
+
+To get the list of greetings (if you created your own greetings they will be in the list.
 
     GET http://localhost:8080/greetings
     having set Accept-Language "en" and
@@ -247,13 +404,15 @@ To test the REST service greeting in English:
             Retry-After,    
             Content-Encoding, 
             ETag, 
-            X-Log-Token, 
+            X-Log-Token,
+            X-Status, 
             X-RateLimit-Limit, 
             X-RateLimit-Limit24h, 
             X-RateLimit-Remaining, 
             X-RateLimit-Reset
-        content-length: 458
-        content-type: application/hal+json        
+        content-length: 430
+        content-type: application/hal+json;concept=greetings;v=1
+        X-Log-Token: some UUID 
 
     - Body:
             {
@@ -262,22 +421,31 @@ To test the REST service greeting in English:
                     "_links": {
                         "self": {
                             "href": "/greetings",
-                            "type": "application/hal+json;concept=greeetinglist;v=1",
+                            "type": "application/hal+json;concept=greetinglist;v=1",
                             "title": "List of Greetings"
                         },
                         "greetings": [
                             {
-                                "href": "/greetings/hallo",
-                                "title": "Danish Greeting - Hallo"
+                                "href": "greetings/hallo",
+                                "title": "Dansk Hilsen Hallo"
                             },
                             {
-                                "href": "/greetings/hello",
-                                "title": "English Greeting - Hello"
+                                "href": "greetings/hallo",
+                                "title": "Danish Greeting Hallo"
+                            },
+                            {
+                                "href": "greetings/hello",
+                                "title": "English Greeting Hello"
+                            },
+                            {
+                                "href": "greetings/hello",
+                                "title": "Engelsk Hilsen Hello"
                             }
                         ]
                     }
                 }
             }
+
 
 
 ## The uber-jar

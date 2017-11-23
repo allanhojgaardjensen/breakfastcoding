@@ -25,6 +25,7 @@ public class CORSFilter implements ContainerResponseFilter {
                 // default exposes are: Cache-Control, Content-Language, Content-type, Expires, Last-Modified, Pragma
                 // according to https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers
                 + "X-Log-Token, "
+                + "X-Status, "
                 + "X-RateLimit-Limit, X-RateLimit-Limit24h, X-RateLimit-Remaining, X-RateLimit-Reset");
     }
 }

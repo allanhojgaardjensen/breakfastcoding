@@ -1,0 +1,13 @@
+{
+  "runtime": {
+    "majorVersion": "8"
+  },
+  "commmand": "java -jar shaded-greeting-rest-service-1.0-SNAPSHOT.jar",
+  "startup": "120",
+  "release": {
+    "version": "latest",
+    "build": "latest",
+    "commit": "latest"
+  },
+  "notes": "Greeting Rest Service on ACCS"
+}
