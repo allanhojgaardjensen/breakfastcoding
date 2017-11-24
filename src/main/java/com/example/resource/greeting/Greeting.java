@@ -3,11 +3,11 @@ package com.example.resource.greeting;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -29,9 +29,14 @@ import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.UriInfo;
 
+import com.example.RepresentationContainer;
 import com.example.service.patch.JSONPatchContainer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.openapitools.jackson.dataformat.hal.HALLink;
+import io.openapitools.jackson.dataformat.hal.HALMapper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 
@@ -43,25 +48,27 @@ import io.swagger.annotations.ApiOperation;
 public class Greeting {
 
     private static final Logger LOGGER = Logger.getLogger(Greeting.class.getName());
-    private static final Map<String, GreetingRepresentation> REPRESENTATIONS = new ConcurrentHashMap<>();
+    
+    private static RepresentationContainer<String, GreetingRepresentation> representations = new RepresentationContainer<>();
+
     private final Map<String, GreetingProducer> greetingProducers = new HashMap<>();
+    private final Map<String, GreetingListProducer> greetingListProducers = new HashMap<>();
 
     public Greeting() {
-        greetingProducers.put("application/json", this::getGreetingG1V3);
-        greetingProducers.put("application/hal+json", this::getGreetingG1V3);
-        greetingProducers.put("application/hal+json;concept=greeting", this::getGreetingG1V3);
+        populateRepresentations();
+        greetingProducers.put("application/json", this::getGreetingG1V4);
+        greetingProducers.put("application/hal+json", this::getGreetingG1V4);
+        greetingProducers.put("application/hal+json;concept=greeting", this::getGreetingG1V4);
         greetingProducers.put("application/hal+json;concept=greeting;v=2", this::getGreetingG1V2);
         greetingProducers.put("application/hal+json;concept=greeting;v=3", this::getGreetingG1V3);
+        greetingProducers.put("application/hal+json;concept=greeting;v=4", this::getGreetingG1V4);
 
-        //populate the version 3 setup
-        REPRESENTATIONS.put("hallo_da",
-                new GreetingRepresentation("Hallo!", "Dansk", "Danmark", "Dansk", "Danmark", "greetings/hallo", "Dansk Hilsen Hallo"));
-        REPRESENTATIONS.put("hallo_en",
-                new GreetingRepresentation("Hallo!", "Dansk", "Danmark", "Danish", "Denmark", "greetings/hallo", "Danish Greeting Hallo"));
-        REPRESENTATIONS.put("hello_da",
-                new GreetingRepresentation("Hello!", "English", "England", "Engelsk", "England", "greetings/hello", "Engelsk Hilsen Hello"));
-        REPRESENTATIONS.put("hello_en",
-                new GreetingRepresentation("Hello!", "English", "England", "English", "England", "greetings/hello", "English Greeting Hello"));
+        greetingListProducers.put("application/json", this::getGreetingListG1V2);
+        greetingListProducers.put("application/hal+json", this::getGreetingListG1V2);
+        greetingListProducers.put("application/hal+json;concept=greetings", this::getGreetingListG1V2);
+        greetingListProducers.put("application/hal+json;concept=greetings;v=2", this::getGreetingListG1V2);
+        greetingListProducers.put("application/hal+json;concept=greetings;v=1", this::getGreetingListG1V1);
+
     }
 
     /**
@@ -100,17 +107,18 @@ public class Greeting {
             @HeaderParam("Accept-Language") @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
             @HeaderParam("X-Log-Token") @Pattern(regexp = "^[a-zA-Z0-9\\-]{36}$") String logToken,
             String greeting) {
-        ObjectMapper mapper = new ObjectMapper();
+        Response.Status status = Response.Status.BAD_REQUEST;
+        ObjectMapper mapper = new HALMapper();
         try {
-            GreetingRepresentation newGreeting = mapper.readValue(greeting, GreetingRepresentation.class);
-            String key = getGreetingRef(newGreeting) + "_" + preferredLanguage(acceptLanguage);
-            GreetingRepresentation stored = REPRESENTATIONS.get(key);
+            GreetingRepresentation mg = mapper.readValue(greeting, GreetingRepresentation.class);
+            String key = getGreetingRef(mg) + "_" + preferredLanguage(acceptLanguage);
+            GreetingRepresentation stored = representations.get(key);
             if (stored != null) {
-                LOGGER.log(Level.INFO, "Attempted to update an existing Greeting (" + key + ") - in total (" + REPRESENTATIONS.size() + "):\n" + newGreeting.toHAL());
+                LOGGER.log(Level.INFO, "Attempted to update an existing Greeting (" + key + ") - in total (" + representations.size() + "):\n" + mg.toHAL());
                 String errMsg = "{"
                         + "  \"message\": \"Sorry that your request for updating greeting could not be met!\","
                         + "  \"_links\":{"
-                        + "      \"href\":\"/greetings/" + stored.getLinks().getSelf().getHref() + "\","
+                        + "      \"href\":\"/greetings/" + stored.getSelf().getHref() + "\","
                         + "      \"type\":\"application/hal+json\","
                         + "      \"title\":\"Update Greeting Resource\""
                         + "      }"
@@ -118,22 +126,25 @@ public class Greeting {
                 return Response
                         .status(Response.Status.CONFLICT)
                         .entity(errMsg)
-                        .header("Location", stored.getLinks().getSelf().getHref())
+                        .header("Location", stored.getSelf().getHref())
                         .header("X-Log-Token", validateOrCreateToken(logToken))
                         .build();
-
             }
-            REPRESENTATIONS.put(key, newGreeting);
-            LOGGER.log(Level.INFO, "Parsed new Greeting (" + key + ") - in total (" + REPRESENTATIONS.size() + "):\n" + newGreeting.toHAL());
-            return Response
-                    .status(Response.Status.CREATED)
-                    .header("Location", newGreeting.getLinks().getSelf().getHref())
+            status = createNewGreeting(mg, mg.getSelf().getHref(), greeting, key, logToken + "problem creating new greeting");
+            if (Response.Status.CREATED.equals(status)) {
+                LOGGER.log(Level.INFO, "Parsed new Greeting (" + key + ") - in total (" + representations.size() + "):\n" + mg.toHAL());
+                EntityTag et = getETag(mapper.writeValueAsString(representations.get(key)));
+                return Response
+                    .status(status)
+                    .tag(et)
+                    .header("Location", mg.getSelf().getHref())
                     .header("X-Log-Token", validateOrCreateToken(logToken))
                     .build();
+            }
         } catch (IOException ex) {
             LOGGER.log(Level.WARNING, "Sorry, I could not parse the input. which was:\n" + greeting.toString(), ex);
         }
-        return Response.status(Response.Status.BAD_REQUEST).build();
+        return Response.status(status).build();
     }
 
     /**
@@ -142,36 +153,33 @@ public class Greeting {
      * A LogToken can be part of the request and that will be returned in the response. If no LogToken is present in the request a new one is extracted and returned to the
      * consumer. The format for the LogToken is a 36 long string that can consist of a-z, A-Z,0-9 and - In other words: small letters, capital letters and numbers and hyphens
      * <p>
+     * @param request the actual request
      * @param acceptLanguage the preferred language
      * @param accept the accepted response format
      * @param logToken a correlation id for a consumer
+     * @param eTag the concrete instance of the lists contents version seen temporally
      * @return String that will be returned containing "application/hal+json".
      */
     @GET
     @Produces({"application/hal+json", "application/json"})
-    @ApiOperation(value = "list all greetings"
-            + " (the use of application/json is deprecated and will give the old greetings response)", response = String.class)
-    public Response getGreetingsList(@HeaderParam("Accept-Language")
+    @ApiOperation(value = "list all greetings", response = GreetingsRepresentation.class)
+    public Response getGreetingsList(
+            @Context Request request,
+            @HeaderParam("Accept") String accept,
+            @HeaderParam("Accept-Language")
             @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
             @HeaderParam("X-Log-Token") @Pattern(regexp = "^[a-zA-Z0-9\\-]{36}$") String logToken,
-            @HeaderParam("Accept") String accept) {
-        CacheControl cacheControl = new CacheControl();
-        int maxAge = 30;
-        cacheControl.setMaxAge(maxAge);
-        return Response.ok()
-                .entity(getGreetingList())
-                .type("application/hal+json;concept=greetings;v=1")
-                .cacheControl(cacheControl)
-                .header("X-Log-Token", validateOrCreateToken(logToken))
-                .build();
+            @HeaderParam("If-None-Match") String eTag) {
+        return greetingListProducers.getOrDefault(accept, this::handle415Unsupported).getResponse(request, accept, acceptLanguage, logToken, eTag);
     }
 
     /**
      * Create a new greeting or replace an existing greeting.
      *
-     * @param request the actual request
+     * @param request the received request
      * @param acceptLanguage the preferred language
      * @param logToken a correlation id for a consumer
+     * @param eTag the actual instance content version for a given greeting
      * @param greeting a json formatted input
      * @param resource the concrete resource
      * @return response the status, headers etc. for consumer
@@ -198,32 +206,46 @@ public class Greeting {
     @Path("{greeting}")
     @Produces({"application/hal+json"})
     @Consumes({"application/json"})
-    @ApiOperation(value = "replaces a greeting")
+    @ApiOperation(value = "replace a greeting", response = GreetingRepresentation.class)
     public Response replaceOrCreateGreeting(
             @Context Request request,
             @HeaderParam("Accept-Language") @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
             @HeaderParam("X-Log-Token") @Pattern(regexp = "^[a-zA-Z0-9\\-]{36}$") String logToken,
+            @HeaderParam("If-None-Match") String eTag,
             @PathParam("greeting") @Pattern(regexp = "^[a-z0-9\\-]+$") String resource,
             String greeting) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new HALMapper();
         try {
-            GreetingRepresentation receivedGreeting = mapper.readValue(greeting, GreetingRepresentation.class);
-            String key = getGreetingRef(receivedGreeting) + "_" + preferredLanguage(acceptLanguage);
-            GreetingRepresentation stored = REPRESENTATIONS.get(key);
-            final String msg = "Greeting (" + key + ") - in total (" + REPRESENTATIONS.size() + "):\n" + receivedGreeting.toHAL();
-            final String inconsistency = "Href and ressource mismatch - target:" + resource + " object:";
+            GreetingRepresentation mappedGreeting = mapper.readValue(greeting, GreetingRepresentation.class);
+            String key = getGreetingRef(mappedGreeting) + "_" + preferredLanguage(acceptLanguage);
+            GreetingRepresentation stored = representations.get(key);
+            final String msg = "Greeting (" + key + ") - in total (" + representations.size() + "):\n" + mappedGreeting.toHAL();
+            final String inconsistency = "Href and ressource mismatch - target:" + resource + " object:" + msg;
+            GreetingRepresentation receivedGreeting = new GreetingRepresentation(mappedGreeting);
             Response.Status status;
+            EntityTag et = null;
             if (stored == null) {
                 status = createNewGreeting(receivedGreeting, resource, msg, key, inconsistency);
+                et = getETag(mapper.writeValueAsString(representations.get(key)));
             } else if (isRessourceIdCorrect(stored, resource)) {
+                et = getETag(mapper.writeValueAsString(stored));
+                ResponseBuilder builder = request.evaluatePreconditions(et);
+                if (builder == null) {
+                    return Response.status(Response.Status.CONFLICT)
+                        .entity("{\"error\":\"object has been updated, please get newest version\"}")
+                        .header("X-Log-Token", validateOrCreateToken(logToken))
+                        .build();
+                }
                 status = replaceGreeting(msg, key, receivedGreeting);
+                et = getETag(mapper.writeValueAsString(representations.get(key)));
             } else {
-                LOGGER.log(Level.INFO, inconsistency, msg);
+                LOGGER.log(Level.INFO, inconsistency);
                 status = Response.Status.BAD_REQUEST;
             }
             return Response
                     .status(status)
-                    .header("Location", receivedGreeting.getLinks().getSelf().getHref())
+                    .tag(et)
+                    .header("Location", receivedGreeting.getSelf().getHref())
                     .header("X-Log-Token", validateOrCreateToken(logToken))
                     .build();
         } catch (IOException ex) {
@@ -238,10 +260,11 @@ public class Greeting {
      * A LogToken can be part of the request and that will be returned in the response. If no LogToken is present in the request a new one is extracted and returned to the
      * consumer. The format for the LogToken is a 36 long string that can consist of a-z, A-Z,0-9 and - In other words: small letters, capital letters and numbers and hyphens
      * <p>
-     * @param request the actual http request
+     * @param request the actual request received
      * @param accept the chosen accepted content-type by consumer
      * @param acceptLanguage client can set the preferred preferredLanguage(s) as in HTTP spec.
      * @param logToken a correlation id for a consumer
+     * @param eTag the actual instance content version for a given greeting
      * @param greeting the greeting to delete.
      * @return status, headers etc. to consumer
      */
@@ -254,18 +277,43 @@ public class Greeting {
             @HeaderParam("Accept") String accept,
             @HeaderParam("Accept-Language") @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
             @HeaderParam("X-Log-Token") @Pattern(regexp = "^[a-zA-Z0-9\\-]{36}$") String logToken,
+            @HeaderParam("If-None-Match") String eTag,
             @PathParam("greeting") @Pattern(regexp = "[a-z]*") String greeting) {
         String key = greeting + "_" + preferredLanguage(acceptLanguage);
-        GreetingRepresentation stored = REPRESENTATIONS.get(key);
+        GreetingRepresentation stored = representations.get(key);
+        ObjectMapper mapper = new HALMapper();
         Response.Status status;
         if (stored == null) {
             LOGGER.log(Level.INFO, "Attempted to delete a non-existing Greeting " + key);
             status = Response.Status.NOT_FOUND;
         } else {
+            try {
+                EntityTag et = getETag(mapper.writeValueAsString(stored));
+                ResponseBuilder builder = request.evaluatePreconditions(et);
+                if (builder == null) {
+                    return Response.status(Response.Status.CONFLICT)
+                        .entity("{\"error\":\"object has been updated, please get newest version\"}")
+                        .header("X-Log-Token", validateOrCreateToken(logToken))
+                        .build();
+                }
+            } catch (JsonProcessingException ex) {
+                LOGGER.log(Level.WARNING, "Delete of object failed " + key);
+            }
             LOGGER.log(Level.INFO, "Deleted " + key);
             status = Response.Status.NO_CONTENT;
-            REPRESENTATIONS.remove(key);
-            LOGGER.log(Level.INFO, "Greetings " + REPRESENTATIONS.size());
+            try {
+                EntityTag et = getETag(mapper.writeValueAsString(representations.get(key)));
+                representations.remove(key);
+                LOGGER.log(Level.INFO, "Greetings " + representations.size());
+                return Response
+                    .status(status)
+                    .tag(et)
+                    .header("X-Log-Token", validateOrCreateToken(logToken))
+                    .build();
+
+            } catch (JsonProcessingException pe) {
+                LOGGER.log(Level.WARNING, "Delete of object failed " + key);
+            }
         }
         return Response
                 .status(status)
@@ -279,7 +327,7 @@ public class Greeting {
      * A LogToken can be part of the request and that will be returned in the response. If no LogToken is present in the request a new one is extracted and returned to the
      * consumer. The format for the LogToken is a 36 long string that can consist of a-z, A-Z,0-9 and - In other words: small letters, capital letters and numbers and hyphens
      * <p>
-     * @param request the actual http request
+     * @param request the actual request
      * @param accept the chosen accepted content-type by consumer
      * @param acceptLanguage client can set the preferred preferredLanguage(s) as in HTTP spec.
      * @param eTag which is the header "If-None-Match" the etag which sets the expected state for the greeting to be updated
@@ -302,41 +350,48 @@ public class Greeting {
             @PathParam("greeting") @Pattern(regexp = "[a-z]*") String greeting,
             String patch) {
         String key = greeting + "_" + preferredLanguage(acceptLanguage);
-        GreetingRepresentation stored = REPRESENTATIONS.get(key);
+        GreetingRepresentation stored = representations.get(key);
         if (stored == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         } else {
-            EntityTag et = getETag(stored.toHAL());
-            ResponseBuilder builder = request.evaluatePreconditions(et);
-            if (builder != null) {
-                try {
-                    ObjectMapper mapper = new ObjectMapper();
-                    JSONPatchContainer patchR = mapper.readValue(patch, JSONPatchContainer.class);
-                    if (patchR.getOperation().equals("replace")) {
-                        try {
-                            if (!patchR.replaceValue(stored)) {
-                                return getPatchResponse(Response.Status.BAD_REQUEST, "{\"error\":\"value could not be replaced\"}",
-                                    stored.getLinks().getSelf().getHref(), logToken);                                
+            ObjectMapper om = new HALMapper();
+            try {
+                EntityTag et = getETag(om.writeValueAsString(stored));
+                ResponseBuilder builder = request.evaluatePreconditions(et);
+                if (builder != null) {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JSONPatchContainer patchR = mapper.readValue(patch, JSONPatchContainer.class);
+                        if (patchR.getOperation().equals("replace")) {
+                            try {
+                                if (!patchR.replaceValue(stored)) {
+                                    return getPatchResponse(Response.Status.BAD_REQUEST, "{\"error\":\"value could not be replaced\"}",
+                                            stored.getSelf().getHref(), logToken);
+                                } else {
+                                    representations.alterchCode();
+                                }
+                            } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException | SecurityException ex) {
+                                return getPatchResponse(Response.Status.BAD_REQUEST, "{\"error\":\"value was not replaced\"}",
+                                        stored.getSelf().getHref(), logToken);
                             }
-                        } catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException | SecurityException ex) {
-                            return getPatchResponse(Response.Status.BAD_REQUEST, "{\"error\":\"value was not replaced\"}",
-                                    stored.getLinks().getSelf().getHref(), logToken);
+                            return getPatchResponse(Response.Status.OK, "{\"status\":\"value is replaced\"}",
+                                    stored.getSelf().getHref(), logToken);
+                        } else {
+                            return getPatchResponse(
+                                    Response.Status.BAD_REQUEST, "{\"error\":\"only operation replace is supported\"}",
+                                    stored.getSelf().getHref(), logToken);
                         }
-                        return getPatchResponse(Response.Status.OK, "{\"status\":\"value is replaced\"}",
-                                stored.getLinks().getSelf().getHref(), logToken);
-                    } else {
-                        return getPatchResponse(
-                                Response.Status.BAD_REQUEST, "{\"error\":\"only operation replace is supported\"}",
-                                stored.getLinks().getSelf().getHref(), logToken);
+                    } catch (IOException ex) {
+                        Response.status(Response.Status.BAD_REQUEST).build();
                     }
-                } catch (IOException ex) {
-                    Response.status(Response.Status.BAD_REQUEST).build();
+                } else {
+                    return getPatchResponse(
+                            Response.Status.CONFLICT, "{\"error\":\"object has been updated, please get newest version\"}",
+                            stored.getSelf().getHref(), logToken);
                 }
-            } else {
-                return getPatchResponse(
-                        Response.Status.CONFLICT, "{\"error\":\"object has not been updated, please get newest version\"}",
-                        stored.getLinks().getSelf().getHref(), logToken);
-            }
+            } catch (JsonProcessingException ex) {
+                LOGGER.log(Level.SEVERE, "Could not map List to json", ex);           
+            }  
         }
         return Response.status(Response.Status.BAD_REQUEST).build();
     }
@@ -347,54 +402,125 @@ public class Greeting {
      * A LogToken can be part of the request and that will be returned in the response. If no LogToken is present in the request a new one is extracted and returned to the
      * consumer. The format for the LogToken is a 36 long string that can consist of a-z, A-Z,0-9 and - In other words: small letters, capital letters and numbers and hyphens
      * <p>
-     * @param request the actual http request
+     * @param request the actual request
+     * @param uriInfo the URI information
      * @param accept the chosen accepted content-type by consumer
      * @param acceptLanguage client can set the preferred preferredLanguage(s) as in HTTP spec.
      * @param logToken a correlation id for a consumer
+     * @param eTag the version of the list, it changes every time the list is changed
      * @param greeting the greeting wanted by consumer
      * @return String that will be returned containing "application/hal+json".
      */
     @GET
     @Path("{greeting}")
     @Produces({"application/json", "application/hal+json"})
-    @ApiOperation(value = "get a greeting back with a preferred language portion included", response = GreetingRepresentation.class)
+    @ApiOperation(value = "get a greeting", response = GreetingRepresentation.class)
     public Response getGreeting(
-            @Context Request request,
+            @Context Request request, @Context UriInfo uriInfo,
             @HeaderParam("Accept") String accept,
             @HeaderParam("Accept-Language") @Pattern(regexp = "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+") String acceptLanguage,
             @HeaderParam("X-Log-Token") @Pattern(regexp = "^[a-zA-Z0-9\\-]{36}$") String logToken,
+            @HeaderParam("If-None-Match") String eTag,
             @PathParam("greeting") @Pattern(regexp = "[a-z]*") String greeting) {
         return greetingProducers.getOrDefault(accept, this::handle415Unsupported).getResponse(request, accept, acceptLanguage, greeting, logToken);
     }
 
+    private Response getGreetingListG1V2(Request request, String accept, String acceptLanguage, String logToken, String eTag) {
+        EntityTag et = getETag(representations.getChCode());
+        ResponseBuilder builder = request.evaluatePreconditions(et);
+        if (builder != null) {
+            return builder.build();
+        }
+        CacheControl cacheControl = new CacheControl();
+        int maxAge = 30;
+        cacheControl.setMaxAge(maxAge);
+        int version = 2;
+        Collection<GreetingRepresentation> greetingsList = representations.values()
+                .stream()
+                .map(gr -> new GreetingRepresentation(gr))
+                .collect(Collectors.toList());
+        GreetingsRepresentation gr = new GreetingsRepresentation("This is the information v2HAL", greetingsList);
+        ObjectMapper halMapper = new HALMapper();
+        String json = "{\"error\":\"could not parse object\"}";
+        try {
+            json = halMapper.writeValueAsString(gr);
+        } catch (JsonProcessingException ex) {
+            LOGGER.log(Level.SEVERE, "Could not map List to json", ex);
+        }
+        return Response.ok()
+                .entity(json)
+                .tag(et)
+                .type("application/hal+json;concept=greetings;v=" + version)
+                .cacheControl(cacheControl)
+                .header("X-Log-Token", validateOrCreateToken(logToken))
+                .build();
+    }
+
+    private Response getGreetingListG1V1(Request request, String accept, String acceptLanguage, String logToken, String eTag) {
+        CacheControl cacheControl = new CacheControl();
+        int maxAge = 30;
+        int version = 1;
+        cacheControl.setMaxAge(maxAge);
+        return Response.ok()
+                .entity(getGreetingList(version))
+                .type("application/hal+json;concept=greetings;v=" + version)
+                .cacheControl(cacheControl)
+                .header("X-Log-Token", validateOrCreateToken(logToken))
+                .build();
+    }
+
     /**
-     * Implements version one of the greeting service, where detailed information needs to be handled and returned to consumer, this construction using interface and explicitly
-     * mapping content-types to methods allows to maintain multiple content versions in same service endpoint and thus be able to ensure that consumers can roll back to this
-     * version once the next edition that is no longer compliant is available.
+     * Implements latest version of the greeting service.
      * <p>
      * The consumer roll back by entering the full content-type in the Accept header in this case {@code application/json;concept=greeting;v=1} or more specific and correct as that
      * is the actual format used. {@code application/hal+json;concept=greeting;v=1}
      */
+    private Response getGreetingG1V4(Request request, String accept, String acceptLanguage, String greeting, String logToken) {
+        String language = preferredLanguage(acceptLanguage);
+        final String key = greeting + "_" + language;
+        GreetingRepresentation entity = representations.get(key);
+        if (entity == null) {
+            return getNoGreetingFound(logToken);
+        }
+        ObjectMapper mapper = new HALMapper();
+        Date lastModified = getLastModified();
+        EntityTag eTag = getETag(entity.toString());
+        String entityResponse = entity.toString();
+        try {
+            eTag = getETag(mapper.writeValueAsString(entity));
+            entityResponse = mapper.writeValueAsString(entity);
+        } catch (JsonProcessingException ex) {
+            LOGGER.log(Level.WARNING, "Could not map entity:\n " + entity.toString(), ex);
+        }
+        ResponseBuilder builder = request.evaluatePreconditions(lastModified, eTag);
+        if (builder != null) {
+            return builder.build();
+        }
+        CacheControl cacheControl = new CacheControl();
+        int maxAge = 60;
+        cacheControl.setMaxAge(maxAge);
+        return Response.ok()
+                .entity(entityResponse)
+                .type("application/hal+json;concept=greeting;v=4")
+                .cacheControl(cacheControl)
+                .tag(eTag)
+                .lastModified(lastModified)
+                .header("X-Log-Token", validateOrCreateToken(logToken))
+                .build();
+    }
+
     private Response getGreetingG1V3(Request request, String accept, String acceptLanguage, String greeting, String logToken) {
         String language = preferredLanguage(acceptLanguage);
-        GreetingRepresentation greetingEntity = REPRESENTATIONS.get(greeting + "_" + language);
+        GreetingRepresentation greetingEntity = representations.get(greeting + "_" + language);
         if (greetingEntity == null) {
             return getNoGreetingFound(logToken);
         }
         return getResponse(request, logToken, greetingEntity.toHAL(), 3);
     }
 
-    /**
-     * Implements version two of the greeting service, where detailed information needs to be handled and returned to consumer, this construction using interface and explicitly
-     * mapping content-types to methods allows to maintain multiple content versions in same service endpoint and thus be able to ensure that consumers can roll back to this
-     * version once the next edition that is no longer compliant is available.
-     * <p>
-     * The consumer roll back by entering the full content-type in the Accept header in this case {@code application/json;concept=greeting;v=1} or more specific and correct as that
-     * is the actual format used. {@code application/hal+json;concept=greeting;v=1}
-     */
     private Response getGreetingG1V2(Request request, String accept, String acceptLanguage, String greeting, String logToken) {
         String language = preferredLanguage(acceptLanguage);
-        GreetingRepresentation greetingEntity = REPRESENTATIONS.get(greeting + "_" + language);
+        GreetingRepresentation greetingEntity = representations.get(greeting + "_" + language);
         if (greetingEntity == null) {
             String entity = "{"
                     + "  \"message\": \"Sorry your greeting does not exist yet!\","
@@ -418,7 +544,7 @@ public class Greeting {
         Response.Status status;
         LOGGER.log(Level.INFO, "Parsed Replaceable ", msg);
         status = Response.Status.OK;
-        REPRESENTATIONS.put(key, receivedGreeting);
+        representations.add(key, receivedGreeting);
         return status;
     }
 
@@ -426,8 +552,9 @@ public class Greeting {
         Response.Status status;
         if (isRessourceIdCorrect(receivedGreeting, resource)) {
             LOGGER.log(Level.INFO, "Parsed New ", msg);
+            GreetingRepresentation newGreeting = new GreetingRepresentation(receivedGreeting);
             status = Response.Status.CREATED;
-            REPRESENTATIONS.put(key, receivedGreeting);
+            representations.add(key, newGreeting);
         } else {
             LOGGER.log(Level.INFO, inconsistency, msg);
             status = Response.Status.BAD_REQUEST;
@@ -501,21 +628,21 @@ public class Greeting {
     }
 
     private String getGreetingRef(GreetingRepresentation newGreeting) {
-        String ref = newGreeting.getLinks().getSelf().getHref();
+        String ref = newGreeting.getSelf().getHref();
         String resources = "greetings/";
         int start = ref.indexOf(resources) + resources.length();
         String result = ref.substring(start).toLowerCase();
         return result;
     }
 
-    private String getGreetingList() {
+    private String getGreetingList(int version) {
         final String template = "{"
                 + "\"greetings\":{"
                 + "\"info\":\"a list containing current greetings\","
                 + "\"_links\":{"
                 + "\"self\":{"
                 + "\"href\":\"/greetings\","
-                + "\"type\":\"application/hal+json;concept=greetinglist;v=1\","
+                + "\"type\":\"application/hal+json;concept=greetinglist;v=" + version + "\","
                 + "\"title\":\"List of Greetings\""
                 + "},"
                 + "\"greetings\":"
@@ -531,14 +658,14 @@ public class Greeting {
     private String getResultingGreetingsList() {
         String result;
         StringBuilder list = new StringBuilder();
-        REPRESENTATIONS
+        representations
                 .entrySet()
                 .stream()
                 .map((entry) -> list
                 .append("{\"href\":\"")
-                .append(entry.getValue().getLinks().getSelf().getHref())
+                .append(entry.getValue().getSelf().getHref())
                 .append("\",\"title\":\"")
-                .append(entry.getValue().getLinks().getSelf().getTitle())
+                .append(entry.getValue().getSelf().getTitle())
                 .append("\"},"))
                 .collect(Collectors.joining());
         result = list.substring(0, list.length() - 1);
@@ -546,8 +673,7 @@ public class Greeting {
     }
 
     private boolean isRessourceIdCorrect(GreetingRepresentation greeting, String resource) {
-        final String href = greeting.getLinks().getSelf().getHref();
-        return href.equals("greetings/" + resource) || href.equals("/greetings/" + resource);
+        return greeting.getSelf().getHref().contains(resource);
     }
 
     /**
@@ -556,18 +682,72 @@ public class Greeting {
      */
     private Date getLastModified() {
         return Date.from(Instant.ofEpochMilli(1505500000000L));
-
     }
 
     private EntityTag getETag(String entity) {
-        EntityTag eTag;
-        eTag = new EntityTag(Integer.toHexString(entity.hashCode()), false);
-        return eTag;
+        if (entity == null) entity = representations.getChCode();
+        return new EntityTag(Integer.toHexString(entity.hashCode()), false);
+    }
+
+    private void populateRepresentations() {
+        if (representations.isEmpty()) {
+            HALLink self = new HALLink.Builder("/greetings/hallo")
+                .title("Dansk Hilsen Hallo")
+                .seen(Instant.now())
+                .name("Danish Greeting Hallo")
+                .templated(false)
+                .hreflang("da")    
+                .type("application/hal+json;concept=greeting")
+                .build();
+            representations.add("hallo_da", 
+                new GreetingRepresentation("Hallo!", "Dansk", "Danmark", 
+                    new GreetingNativeRepresentation("Dansk", "Danmark"), self));
+
+            self = new HALLink.Builder("/greetings/hallo")
+                .title("Danish Greeting Hallo")
+                .seen(Instant.now())
+                .name("Danish Greeting Hallo")
+                .templated(false)
+                .hreflang("en")    
+                .type("application/hal+json;concept=greeting")
+                .build();
+            representations.add("hallo_en", 
+                new GreetingRepresentation("Hallo!", "Dansk", "Danmark", 
+                    new GreetingNativeRepresentation("Danish", "Denmark"), self));
+
+            self = new HALLink.Builder("/greetings/hello")
+                .title("Engelsk Hilsen Hello")
+                .seen(Instant.now())
+                .name("English Greeting Hello")
+                .templated(false)
+                .hreflang("da")    
+                .type("application/hal+json;concept=greeting")
+                .build();
+            representations.add("hello_da", 
+                new GreetingRepresentation("Hello!", "English", "England", 
+                    new GreetingNativeRepresentation("Engelsk", "England"), self));
+        
+            self = new HALLink.Builder("/greetings/hello")
+                .title("English Greeting Hello")
+                .seen(Instant.now())
+                .name("English Greeting Hello")
+                .templated(false)
+                .hreflang("en")    
+                .type("application/hal+json;concept=greeting")
+                .build();
+            representations.add("hello_en", 
+                new GreetingRepresentation("Hello!", "English", "England", 
+                    new GreetingNativeRepresentation("English", "England"), self));
+            LOGGER.log(Level.INFO, "Default data bootstrap activated", representations.size());
+        }
     }
 
     interface GreetingProducer {
-
         Response getResponse(Request request, String accept, String language, String greeting, String logToken);
+    }
+
+    interface GreetingListProducer {
+        Response getResponse(Request request, String accept, String language, String logToken, String eTag);
     }
 
     Response handle415Unsupported(Request request, String... params) {

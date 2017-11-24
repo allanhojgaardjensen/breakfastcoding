@@ -40,6 +40,5 @@ public class OpenAPIListener implements ReaderListener {
                 ResponseDoc.addVerbSpecificHeaders(p);
             });
         });
-        APIDocsGenerator.writeAPI(apiDocs);
     }
 }

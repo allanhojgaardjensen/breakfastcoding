@@ -42,6 +42,8 @@ public class PatchInterceptor implements ReaderInterceptor {
             readerInterceptorContext.setInputStream(new ByteArrayInputStream(body.getBytes(CHARSET)));
         } catch (IOException ex) {
             LOGGER.log(Level.WARNING, "Unable to read input from stream", ex);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Unable to parse ", e);
         }
         return readerInterceptorContext.proceed();
     }

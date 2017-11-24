@@ -1,0 +1,1541 @@
+---
+swagger: "2.0"
+info:
+  description: "# Description Greeting Service API\n\nThe objective for this slim\
+    \ implementation of an API is to put focus on the \nheaders, the responses and\
+    \ the version paradigm in order to achieve an API that\ncan evolve fast.\n\n"
+  version: "1.0-SNAPSHOT"
+  title: "greeting-rest-service"
+  termsOfService: "The terms of using the service is as is. The service was developed\
+    \ for educational purposes only https://example.com/services/contracts/greeting-rest-service\
+    \ states the general terms for using this service.\n                         \
+    \       Consumers can create their own individual contract and terms for usage\
+    \ at https://example.com/services/consumers"
+  contact:
+    name: "Conrad Tactum"
+    url: "https://example.com"
+    email: "contact@example.com"
+  license:
+    name: "(C) CPPDK 2017"
+    url: "https://example.com/licenses/LICENSE.html"
+host: "greetings.services.example.com"
+basePath: "/"
+tags:
+- name: "education"
+  description: "this was made for educational purposes"
+- name: "generated"
+  description: "this API was partly generated"
+- name: "greeting"
+  description: "a sample tag for greetings"
+- name: "usability"
+  description: "only for educational purposes"
+- name: "greetings"
+schemes:
+- "https"
+consumes:
+- "application/json"
+produces:
+- "application/hal+json"
+paths:
+  /greetings/{greeting}:
+    get:
+      tags:
+      - "greetings"
+      summary: "get a greeting"
+      description: ""
+      operationId: "getGreeting"
+      produces:
+      - "application/json"
+      - "application/hal+json"
+      parameters:
+      - name: "Accept"
+        in: "header"
+        description: "Default that is set to application/hal+json and that will return\
+          \ the most recent version of content. If you want another version use application/hal+json;concept=(the\
+          \ projection);v=(the version)"
+        required: true
+        type: "string"
+        pattern: "((application\\/hal\\+json)+(, )?(;concept=[a-z][a-z0-9]+)?(;v=[0-9]+)?(,\
+          \ )*)+"
+      - name: "Accept-Language"
+        in: "header"
+        required: false
+        type: "string"
+        pattern: "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+"
+      - name: "X-Log-Token"
+        in: "header"
+        description: "A Correlation ID that consumers can specify to ensure traceability\
+          \ from own logs. If not present a token will be generated and returned in\
+          \ response"
+        required: false
+        type: "string"
+        pattern: "^[a-zA-Z0-9\\-]{36}$"
+      - name: "If-None-Match"
+        in: "header"
+        required: false
+        type: "string"
+      - name: "greeting"
+        in: "path"
+        required: true
+        type: "string"
+        pattern: "[a-z]*"
+      - name: "X-Service-Generation"
+        in: "header"
+        description: "A service generation ID that allows consumers to specify an\
+          \ API structure version other than the current one. If not present the most\
+          \ recent will be chosen"
+        required: false
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      - name: "X-Client-Version"
+        in: "header"
+        description: "A Client version ID is recommended for traceability from own\
+          \ logs."
+        required: true
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Greeting"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        400:
+          description: "Bad Request - the contents of the request were semantically\
+            \ or syntactically wrong."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        401:
+          description: "Not Authorized for the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        403:
+          description: "Forbidden access to the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        404:
+          description: "Resource Not Found"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        406:
+          description: "Not Acceptable - Possible mismatch between headers and content"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        409:
+          description: "Conflict - state of resource may have changed."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        410:
+          description: "Gone - resource is no longer available."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        412:
+          description: "Precondition Failed - result from state of headers."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        415:
+          description: "Content-Type not supported by Resource"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        429:
+          description: "Too much load is added from the client side into the service\
+            \ and the client is requested to limit the number of requests - as the\
+            \ limits has been reached"
+          headers:
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        500:
+          description: "The server experienced a currently unknown problem"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        503:
+          description: "The service is unavailable"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+        505:
+          description: "HTTP Version not supported"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        202:
+          description: "Request accepted for further processing."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        203:
+          description: "Non Authoritative Information"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        301:
+          description: "Resource has moved."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        304:
+          description: "Not Modified - Resource was not updated"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        307:
+          description: "Temporary Redirect - Resource is available shortly else where"
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        501:
+          description: "This method is currently not implemented"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+    put:
+      tags:
+      - "greetings"
+      summary: "replace a greeting"
+      description: ""
+      operationId: "replaceOrCreateGreeting"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/hal+json"
+      parameters:
+      - name: "Accept-Language"
+        in: "header"
+        required: false
+        type: "string"
+        pattern: "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+"
+      - name: "X-Log-Token"
+        in: "header"
+        description: "A Correlation ID that consumers can specify to ensure traceability\
+          \ from own logs. If not present a token will be generated and returned in\
+          \ response"
+        required: false
+        type: "string"
+        pattern: "^[a-zA-Z0-9\\-]{36}$"
+      - name: "If-None-Match"
+        in: "header"
+        required: false
+        type: "string"
+      - name: "greeting"
+        in: "path"
+        required: true
+        type: "string"
+        pattern: "^[a-z0-9\\-]+$"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          type: "string"
+      - name: "Accept"
+        in: "header"
+        description: "Default that is set to application/hal+json and that will return\
+          \ the most recent version of content. If you want another version use application/hal+json;concept=(the\
+          \ projection);v=(the version)"
+        required: true
+        type: "string"
+        pattern: "((application\\/hal\\+json)+(, )?(;concept=[a-z][a-z0-9]+)?(;v=[0-9]+)?(,\
+          \ )*)+"
+      - name: "X-Service-Generation"
+        in: "header"
+        description: "A service generation ID that allows consumers to specify an\
+          \ API structure version other than the current one. If not present the most\
+          \ recent will be chosen"
+        required: false
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      - name: "X-Client-Version"
+        in: "header"
+        description: "A Client version ID is recommended for traceability from own\
+          \ logs."
+        required: true
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Greeting"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        201:
+          description: "Resource Created."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        202:
+          description: "Request accepted for further processing."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        301:
+          description: "Resource has moved."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        307:
+          description: "Temporary Redirect - Resource is available shortly else where"
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        410:
+          description: "Gone - resource is no longer available."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        412:
+          description: "Precondition Failed - result from state of headers."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        415:
+          description: "Content-Type not supported by Resource"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        429:
+          description: "Too much load is added from the client side into the service\
+            \ and the client is requested to limit the number of requests - as the\
+            \ limits has been reached"
+          headers:
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        500:
+          description: "The server experienced a currently unknown problem"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        501:
+          description: "This method is currently not implemented"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        503:
+          description: "The service is unavailable"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+        505:
+          description: "HTTP Version not supported"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        400:
+          description: "Bad Request - the contents of the request were semantically\
+            \ or syntactically wrong."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        401:
+          description: "Not Authorized for the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        403:
+          description: "Forbidden access to the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        404:
+          description: "Resource Not Found"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        406:
+          description: "Not Acceptable - Possible mismatch between headers and content"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        409:
+          description: "Conflict - state of resource may have changed."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+    delete:
+      tags:
+      - "greetings"
+      summary: "delete a greeting"
+      description: ""
+      operationId: "deleteGreeting"
+      consumes:
+      - "application/json"
+      parameters:
+      - name: "Accept"
+        in: "header"
+        description: "Default that is set to application/hal+json and that will return\
+          \ the most recent version of content. If you want another version use application/hal+json;concept=(the\
+          \ projection);v=(the version)"
+        required: true
+        type: "string"
+        pattern: "((application\\/hal\\+json)+(, )?(;concept=[a-z][a-z0-9]+)?(;v=[0-9]+)?(,\
+          \ )*)+"
+      - name: "Accept-Language"
+        in: "header"
+        required: false
+        type: "string"
+        pattern: "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+"
+      - name: "X-Log-Token"
+        in: "header"
+        description: "A Correlation ID that consumers can specify to ensure traceability\
+          \ from own logs. If not present a token will be generated and returned in\
+          \ response"
+        required: false
+        type: "string"
+        pattern: "^[a-zA-Z0-9\\-]{36}$"
+      - name: "If-None-Match"
+        in: "header"
+        required: false
+        type: "string"
+      - name: "greeting"
+        in: "path"
+        required: true
+        type: "string"
+        pattern: "[a-z]*"
+      - name: "X-Service-Generation"
+        in: "header"
+        description: "A service generation ID that allows consumers to specify an\
+          \ API structure version other than the current one. If not present the most\
+          \ recent will be chosen"
+        required: false
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      - name: "X-Client-Version"
+        in: "header"
+        description: "A Client version ID is recommended for traceability from own\
+          \ logs."
+        required: true
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      responses:
+        default:
+          description: "successful operation"
+        204:
+          description: "Request accepted Nothing Returned."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        200:
+          description: "OK."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        400:
+          description: "Bad Request - the contents of the request were semantically\
+            \ or syntactically wrong."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        401:
+          description: "Not Authorized for the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        403:
+          description: "Forbidden access to the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        404:
+          description: "Resource Not Found"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        406:
+          description: "Not Acceptable - Possible mismatch between headers and content"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        409:
+          description: "Conflict - state of resource may have changed."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        410:
+          description: "Gone - resource is no longer available."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        412:
+          description: "Precondition Failed - result from state of headers."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        415:
+          description: "Content-Type not supported by Resource"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        429:
+          description: "Too much load is added from the client side into the service\
+            \ and the client is requested to limit the number of requests - as the\
+            \ limits has been reached"
+          headers:
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        500:
+          description: "The server experienced a currently unknown problem"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        503:
+          description: "The service is unavailable"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+        505:
+          description: "HTTP Version not supported"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+    patch:
+      tags:
+      - "greetings"
+      summary: "update a greeting"
+      description: ""
+      operationId: "updateGreeting"
+      consumes:
+      - "application/patch+json"
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "Accept"
+        in: "header"
+        description: "Default that is set to application/hal+json and that will return\
+          \ the most recent version of content. If you want another version use application/hal+json;concept=(the\
+          \ projection);v=(the version)"
+        required: true
+        type: "string"
+        pattern: "((application\\/hal\\+json)+(, )?(;concept=[a-z][a-z0-9]+)?(;v=[0-9]+)?(,\
+          \ )*)+"
+      - name: "Accept-Language"
+        in: "header"
+        required: false
+        type: "string"
+        pattern: "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+"
+      - name: "If-None-Match"
+        in: "header"
+        required: false
+        type: "string"
+      - name: "X-Log-Token"
+        in: "header"
+        description: "A Correlation ID that consumers can specify to ensure traceability\
+          \ from own logs. If not present a token will be generated and returned in\
+          \ response"
+        required: false
+        type: "string"
+        pattern: "^[a-zA-Z0-9\\-]{36}$"
+      - name: "greeting"
+        in: "path"
+        required: true
+        type: "string"
+        pattern: "[a-z]*"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          type: "string"
+      - name: "Accept-Patch"
+        in: "header"
+        description: "A an explicit header for the accept of Patch Verb."
+        required: true
+        type: "string"
+        pattern: "^application/patch+json"
+      - name: "Content-Type"
+        in: "header"
+        description: "A an explicit header for the body json."
+        required: true
+        type: "string"
+        pattern: "^application/patch+json"
+      - name: "X-Service-Generation"
+        in: "header"
+        description: "A service generation ID that allows consumers to specify an\
+          \ API structure version other than the current one. If not present the most\
+          \ recent will be chosen"
+        required: false
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      - name: "X-Client-Version"
+        in: "header"
+        description: "A Client version ID is recommended for traceability from own\
+          \ logs."
+        required: true
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      responses:
+        default:
+          description: "successful operation"
+        422:
+          description: "Unprocessable Request - illegal modification of resource"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        200:
+          description: "OK."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        400:
+          description: "Bad Request - the contents of the request were semantically\
+            \ or syntactically wrong."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        401:
+          description: "Not Authorized for the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        403:
+          description: "Forbidden access to the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        404:
+          description: "Resource Not Found"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        406:
+          description: "Not Acceptable - Possible mismatch between headers and content"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        409:
+          description: "Conflict - state of resource may have changed."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        410:
+          description: "Gone - resource is no longer available."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        412:
+          description: "Precondition Failed - result from state of headers."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        415:
+          description: "Content-Type not supported by Resource"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        429:
+          description: "Too much load is added from the client side into the service\
+            \ and the client is requested to limit the number of requests - as the\
+            \ limits has been reached"
+          headers:
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        500:
+          description: "The server experienced a currently unknown problem"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        503:
+          description: "The service is unavailable"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+        505:
+          description: "HTTP Version not supported"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+  /greetings:
+    get:
+      tags:
+      - "greetings"
+      summary: "list all greetings"
+      description: ""
+      operationId: "getGreetingsList"
+      produces:
+      - "application/hal+json"
+      - "application/json"
+      parameters:
+      - name: "Accept"
+        in: "header"
+        description: "Default that is set to application/hal+json and that will return\
+          \ the most recent version of content. If you want another version use application/hal+json;concept=(the\
+          \ projection);v=(the version)"
+        required: true
+        type: "string"
+        pattern: "((application\\/hal\\+json)+(, )?(;concept=[a-z][a-z0-9]+)?(;v=[0-9]+)?(,\
+          \ )*)+"
+      - name: "Accept-Language"
+        in: "header"
+        required: false
+        type: "string"
+        pattern: "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+"
+      - name: "X-Log-Token"
+        in: "header"
+        description: "A Correlation ID that consumers can specify to ensure traceability\
+          \ from own logs. If not present a token will be generated and returned in\
+          \ response"
+        required: false
+        type: "string"
+        pattern: "^[a-zA-Z0-9\\-]{36}$"
+      - name: "If-None-Match"
+        in: "header"
+        required: false
+        type: "string"
+      - name: "X-Service-Generation"
+        in: "header"
+        description: "A service generation ID that allows consumers to specify an\
+          \ API structure version other than the current one. If not present the most\
+          \ recent will be chosen"
+        required: false
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      - name: "X-Client-Version"
+        in: "header"
+        description: "A Client version ID is recommended for traceability from own\
+          \ logs."
+        required: true
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Greetings"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        400:
+          description: "Bad Request - the contents of the request were semantically\
+            \ or syntactically wrong."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        401:
+          description: "Not Authorized for the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        403:
+          description: "Forbidden access to the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        404:
+          description: "Resource Not Found"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        406:
+          description: "Not Acceptable - Possible mismatch between headers and content"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        409:
+          description: "Conflict - state of resource may have changed."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        410:
+          description: "Gone - resource is no longer available."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        412:
+          description: "Precondition Failed - result from state of headers."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        415:
+          description: "Content-Type not supported by Resource"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        429:
+          description: "Too much load is added from the client side into the service\
+            \ and the client is requested to limit the number of requests - as the\
+            \ limits has been reached"
+          headers:
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        500:
+          description: "The server experienced a currently unknown problem"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        503:
+          description: "The service is unavailable"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+        505:
+          description: "HTTP Version not supported"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        202:
+          description: "Request accepted for further processing."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        203:
+          description: "Non Authoritative Information"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        301:
+          description: "Resource has moved."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        304:
+          description: "Not Modified - Resource was not updated"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        307:
+          description: "Temporary Redirect - Resource is available shortly else where"
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        501:
+          description: "This method is currently not implemented"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+    post:
+      tags:
+      - "greetings"
+      summary: "create a new greeting"
+      description: ""
+      operationId: "createNewGreeting"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/hal+json"
+      parameters:
+      - name: "Accept-Language"
+        in: "header"
+        required: false
+        type: "string"
+        pattern: "^((\\s*[a-z]{2},{0,1}(-{0,1}[a-z]{2}){0,1})+(;q=0\\.[1-9]){0,1},{0,1})+"
+      - name: "X-Log-Token"
+        in: "header"
+        description: "A Correlation ID that consumers can specify to ensure traceability\
+          \ from own logs. If not present a token will be generated and returned in\
+          \ response"
+        required: false
+        type: "string"
+        pattern: "^[a-zA-Z0-9\\-]{36}$"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          type: "string"
+      - name: "Accept"
+        in: "header"
+        description: "Default that is set to application/hal+json and that will return\
+          \ the most recent version of content. If you want another version use application/hal+json;concept=(the\
+          \ projection);v=(the version)"
+        required: true
+        type: "string"
+        pattern: "((application\\/hal\\+json)+(, )?(;concept=[a-z][a-z0-9]+)?(;v=[0-9]+)?(,\
+          \ )*)+"
+      - name: "X-Service-Generation"
+        in: "header"
+        description: "A service generation ID that allows consumers to specify an\
+          \ API structure version other than the current one. If not present the most\
+          \ recent will be chosen"
+        required: false
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      - name: "X-Client-Version"
+        in: "header"
+        description: "A Client version ID is recommended for traceability from own\
+          \ logs."
+        required: true
+        type: "string"
+        pattern: "^[0-9]{1}.[0-9]{1}.[0-9]{1}"
+      responses:
+        default:
+          description: "successful operation"
+        201:
+          description: "Resource Created."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        202:
+          description: "Request accepted for further processing."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        301:
+          description: "Resource has moved."
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        307:
+          description: "Temporary Redirect - Resource is available shortly else where"
+          headers:
+            Location:
+              type: "string"
+              description: "The Location is used to state where resource can be found"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+        410:
+          description: "Gone - resource is no longer available."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        412:
+          description: "Precondition Failed - result from state of headers."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        415:
+          description: "Content-Type not supported by Resource"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        429:
+          description: "Too much load is added from the client side into the service\
+            \ and the client is requested to limit the number of requests - as the\
+            \ limits has been reached"
+          headers:
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        500:
+          description: "The server experienced a currently unknown problem"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        501:
+          description: "This method is currently not implemented"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        503:
+          description: "The service is unavailable"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Retry-After:
+              type: "string"
+              description: "When can the resource be expected at the Location"
+        505:
+          description: "HTTP Version not supported"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        200:
+          description: "OK."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+            Content-Type:
+              type: "string"
+              description: "The concrete content-type returned from service - save\
+                \ on client for future versioning of the particular endpoint"
+            Cache-Control:
+              type: "string"
+              description: "The consumer caching information"
+            ETag:
+              type: "string"
+              description: "The entity tag"
+            Expires:
+              type: "string"
+              description: "The information expiry time"
+            Last-Modified:
+              type: "string"
+              description: "The information was changed at this time"
+            Content-Encoding:
+              type: "string"
+              description: "The concrete content-encoding service"
+            X-RateLimit-Limit:
+              type: "string"
+              description: "X-RateLimit-Limit: Request limit per minute"
+            X-RateLimit-Limit-24h:
+              type: "string"
+              description: "X-RateLimit-Limit-24h: Request limit per 24h"
+            X-RateLimit-Remaining:
+              type: "string"
+              description: "X-RateLimit-Remaining: Requests left for the domain/resource\
+                \ for the 24h (locally determined)"
+            X-RateLimit-Reset:
+              type: "string"
+              description: "X-RateLimit-Reset: The remaining window before the rate\
+                \ limit resets in UTC epoch seconds"
+        400:
+          description: "Bad Request - the contents of the request were semantically\
+            \ or syntactically wrong."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        401:
+          description: "Not Authorized for the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        403:
+          description: "Forbidden access to the resource."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        404:
+          description: "Resource Not Found"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        406:
+          description: "Not Acceptable - Possible mismatch between headers and content"
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+        409:
+          description: "Conflict - state of resource may have changed."
+          headers:
+            X-Log-Token:
+              type: "string"
+              description: "A Correlation ID for consumer use"
+definitions:
+  Greeting:
+    type: "object"
+    properties:
+      greeting:
+        type: "string"
+        example: "Hallo"
+        description: "the actual greeting text."
+      language:
+        type: "string"
+        example: "English"
+        description: "the language spoken for people using the actual greeting."
+      country:
+        type: "string"
+        example: "England"
+        description: "the country where the actual greeting is used."
+      native:
+        $ref: "#/definitions/native"
+      _links:
+        type: "object"
+        properties:
+          self:
+            $ref: "#/definitions/HALLink"
+    description: "A greeting representation"
+  HALLink:
+    type: "object"
+    properties:
+      href:
+        type: "string"
+      templated:
+        type: "boolean"
+      type:
+        type: "string"
+      deprecation:
+        type: "string"
+        format: "url"
+      name:
+        type: "string"
+      profile:
+        type: "string"
+        format: "uri"
+      title:
+        type: "string"
+      hreflang:
+        type: "string"
+      seen:
+        type: "string"
+  native:
+    type: "object"
+    properties:
+      language:
+        type: "string"
+        example: "English"
+        description: "the preferred language for consumer of the actual greeting."
+      country:
+        type: "string"
+        example: "English"
+        description: "the country from which the language of the consumer origins."
+    description: "the probably prefered language of the consumer"
+  Greetings:
+    type: "object"
+    properties:
+      info:
+        type: "string"
+        description: "information about the response - a list of greetings"
+      _links:
+        type: "object"
+        properties:
+          greetings:
+            type: "array"
+            items:
+              $ref: "#/definitions/HALLink"
+          self:
+            description: "information about the resource itself"
+            $ref: "#/definitions/HALLink"
+      _embedded:
+        type: "object"
+        properties:
+          greetings:
+            type: "array"
+            items:
+              $ref: "#/definitions/Greeting"
+    description: "A Greeting List"
+externalDocs:
+  description: "documentation"
+  url: "https://github.com/allanhojgaardjensen/breakfastcoding/tree/master/description.md"

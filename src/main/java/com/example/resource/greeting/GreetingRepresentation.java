@@ -1,45 +1,47 @@
 package com.example.resource.greeting;
 
-import com.example.hal.Links;
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.openapitools.jackson.dataformat.hal.HALLink;
+import io.openapitools.jackson.dataformat.hal.annotation.Link;
+import io.openapitools.jackson.dataformat.hal.annotation.Resource;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
  * A Greeting Representation
  */
+@Resource
 @ApiModel(value = "Greeting", description = "A greeting representation")
-@JsonPropertyOrder({"greeting", "language", "country", "native", "_link"})
 public class GreetingRepresentation {
 
     private String greeting;
     private String language;
     private String country;
     private GreetingNativeRepresentation nativeInfo;
-    private Links links;
+
+    @Link
+    private HALLink self;
 
     public GreetingRepresentation() {
         // default constructor required by Jackson
     }
 
-    public GreetingRepresentation(String greeting, String language, String country) {
-        this(greeting, language, country, language, country);
+    public GreetingRepresentation(GreetingRepresentation gr) {
+        this.greeting = gr.getGreeting();
+        this.country = gr.getCountry();
+        this.language = gr.getLanguage();
+        this.nativeInfo = gr.getNative();
+        this.self = gr.getSelf();
     }
 
-    public GreetingRepresentation(String greeting, String language, String country, String nativeLanguage, String nativeCountry) {
-        this(greeting, language, country, nativeLanguage, nativeCountry, greeting.toLowerCase(), greeting);
-    }
-
-    public GreetingRepresentation(
-            String greeting, String language, String country,
-            String nativeLanguage, String nativeCountry,
-            String linkHRef, String linkTitle) {
+    public GreetingRepresentation(String greeting, String language, String country, GreetingNativeRepresentation nativeInfo, HALLink self) {
         this.greeting = greeting;
         this.language = language;
         this.country = country;
-        this.nativeInfo = new GreetingNativeRepresentation(nativeLanguage, nativeCountry);
-        this.links = new Links(linkHRef, linkTitle);
+        this.nativeInfo = nativeInfo;
+        this.self = self;
     }
 
     @ApiModelProperty(
@@ -75,20 +77,48 @@ public class GreetingRepresentation {
     }
 
     @JsonProperty("native")
-    public void setGreetingRepresentation(GreetingNativeRepresentation nativeInfo) {
+    public void setNativeRepresentation(GreetingNativeRepresentation nativeInfo) {
         this.nativeInfo = nativeInfo;
     }
 
-    @JsonProperty("_links")
-    public Links getLinks() {
-        return links;
+    public HALLink getSelf() {
+        return self;
     }
 
-    @JsonProperty("_links")
-    public void setLinks(Links links) {
-        this.links = links;
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 19 * hash + Objects.hashCode(this.greeting);
+        hash = 19 * hash + Objects.hashCode(this.language);
+        hash = 19 * hash + Objects.hashCode(this.country);
+        hash = 19 * hash + Objects.hashCode(this.nativeInfo);
+        hash = 19 * hash + Objects.hashCode(this.self);
+        return hash;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final GreetingRepresentation other = (GreetingRepresentation) obj;
+        if (!Objects.equals(this.greeting, other.greeting))
+            return false;
+        if (!Objects.equals(this.language, other.language))
+            return false;
+        if (!Objects.equals(this.country, other.country))
+            return false;
+        if (!Objects.equals(this.nativeInfo, other.nativeInfo))
+            return false;
+        if (!Objects.equals(this.self, other.self))
+            return false;
+        return true;
+    }
+
+    
     public String toHAL() {
         return "{"
                 + "\"greeting\":\"" + greeting + "\","
@@ -100,26 +130,44 @@ public class GreetingRepresentation {
                 + "},"
                 + "\"_links\":{"
                 + "\"self\":{"
-                + "\"href\":\"" + links.getSelf().getHref() + "\","
-                + "\"title\":\"" + links.getSelf().getTitle() + "\""
+                + "\"href\":\"" + self.getHref() + "\","
+                + "\"title\":\"" + self.getTitle() + "\""
                 + "}"
                 + "}"
                 + "}";
     }
-
+    
     public String toHATEOAS() {
         return "{"
-                +  "\"greeting\":\"" + greeting + "\","
-                +  "\"language\":\"" + language + "\","
-                +  "\"country\":\"" + country + "\","
-                +  "\"native\":{"
-                +   "\"language\":\"" + nativeInfo.getLanguage() + "\","
-                +   "\"country\":\"" + nativeInfo.getCountry() + "\""
-                +  "},"
-                +  "\"_links\":{"
-                +   "\"href\":\"/" + links.getSelf().getHref() + "\","
-                +   "\"title\":\"" + links.getSelf().getTitle() + "\""
-                +  "}"
+                + "\"greeting\":\"" + greeting + "\","
+                + "\"language\":\"" + language + "\","
+                + "\"country\":\"" + country + "\","
+                + "\"native\":{"
+                + "\"language\":\"" + nativeInfo.getLanguage() + "\","
+                + "\"country\":\"" + nativeInfo.getCountry() + "\""
+                + "},"
+                + "\"_links\":{"
+                + "\"href\":\"" + self.getHref() + "\","
+                + "\"title\":\"" + self.getTitle() + "\""
+                + "}"
+                + "}";
+    }
+
+    public String toString() {
+        return "{"
+                + "\"greeting\":\"" + greeting + "\","
+                + "\"language\":\"" + language + "\","
+                + "\"country\":\"" + country + "\","
+                + "\"native\":{"
+                + "\"language\":\"" + nativeInfo.getLanguage() + "\","
+                + "\"country\":\"" + nativeInfo.getCountry() + "\""
+                + "},"
+                + "\"_links\":{"
+                + "\"self\":{"
+                + "\"href\":\"" + self.getHref() + "\","
+                + "\"title\":\"" + self.getTitle() + "\""
+                + "}"
+                + "}"
                 + "}";
     }
 }

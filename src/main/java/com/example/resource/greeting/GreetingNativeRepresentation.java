@@ -1,5 +1,7 @@
 package com.example.resource.greeting;
 
+import java.util.Objects;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -39,5 +41,30 @@ public class GreetingNativeRepresentation {
     public String getCountry() {
         return country;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 59 * hash + Objects.hashCode(this.language);
+        hash = 59 * hash + Objects.hashCode(this.country);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final GreetingNativeRepresentation other = (GreetingNativeRepresentation) obj;
+        if (!Objects.equals(this.language, other.language))
+            return false;
+        if (!Objects.equals(this.country, other.country))
+            return false;
+        return true;
+    }
+    
 }
 

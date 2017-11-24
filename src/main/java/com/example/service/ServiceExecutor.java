@@ -10,7 +10,9 @@ import javax.ws.rs.ext.ContextResolver;
 import com.example.filter.CORSFilter;
 import com.example.service.patch.OptionsAcceptPatchHeaderFilter;
 import com.example.service.patch.PatchInterceptor;
+import io.swagger.annotations.ExternalDocs;
 import io.swagger.annotations.SwaggerDefinition;
+import io.swagger.annotations.Tag;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
@@ -24,9 +26,12 @@ import org.glassfish.jersey.server.ResourceConfig;
         basePath = "/",
         produces = "application/hal+json",
         consumes = "application/json",
-        schemes = SwaggerDefinition.Scheme.HTTPS
-)
-
+        schemes = SwaggerDefinition.Scheme.HTTPS,
+        tags = {@Tag(name = "greeting", description = "a sample tag for greetings"),
+        @Tag(name = "usability", description = "only for educational purposes")},
+        externalDocs = @ExternalDocs(value = "documentation",
+        url = "https://github.com/allanhojgaardjensen/breakfastcoding/tree/master/description.md")
+    )
 
 @ApplicationPath("/")
 public final class ServiceExecutor {
@@ -66,7 +71,6 @@ public final class ServiceExecutor {
         rc.property("jersey.config.server.tracing.type", "ON_DEMAND");
         return rc;
     }
-
     
     /**
      * Create {@link javax.ws.rs.ext.ContextResolver} for {@link org.glassfish.jersey.moxy.json.MoxyJsonConfig}
@@ -81,4 +85,3 @@ public final class ServiceExecutor {
         return moxyJsonConfig.resolver();
     }
 }
-

@@ -1,4 +1,4 @@
-package com.example;
+package com.example.resource.greeting;
 
 import java.io.IOException;
 
@@ -17,6 +17,7 @@ import org.glassfish.jersey.test.JerseyTest;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class GreetingPatchTest extends JerseyTest {
@@ -48,7 +49,14 @@ public class GreetingPatchTest extends JerseyTest {
                 .acceptLanguage("son")
                 .get(Response.class);
         assertEquals(200, response.getStatus());
-        assertEquals(entity, response.readEntity(String.class));
+        String msg = response.readEntity(String.class);
+        assertTrue(msg.contains("\"greeting\":\"Mooojn!\","));
+        assertTrue(msg.contains("\"language\":\"Dansk\","));
+        assertTrue(msg.contains("\"country\":\"Danmark\","));
+        assertTrue(msg.contains("\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"}"));
+        assertTrue(msg.contains("\"_links\":{\"self\":{\"href\":"));
+        assertTrue(msg.contains("greetings/mooojn\",\"title\":\"Sønderjysk Hilsen Møøøjn\"}}"));
+
         EntityTag eTag = response.getEntityTag();
         response = target
                 .request()
@@ -74,8 +82,13 @@ public class GreetingPatchTest extends JerseyTest {
                 .acceptLanguage("son")
                 .get(Response.class);
         assertEquals(200, response.getStatus());
-        entity = "{\"greeting\":\"Mooojn!\",\"language\":\"Synnejysk\",\"country\":\"Danmark\",\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"},\"_links\":{\"self\":{\"href\":\"greetings/mooojn\",\"title\":\"Sønderjysk Hilsen Møøøjn\"}}}";
-        assertEquals(entity, response.readEntity(String.class));
+        msg = response.readEntity(String.class);
+        assertTrue(msg.contains("\"greeting\":\"Mooojn!\","));
+        assertTrue(msg.contains("\"language\":\"Synnejysk\","));
+        assertTrue(msg.contains("\"country\":\"Danmark\","));
+        assertTrue(msg.contains("\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"}"));
+        assertTrue(msg.contains("\"_links\":{\"self\":{\"href\":"));
+        assertTrue(msg.contains("greetings/mooojn\",\"title\":\"Sønderjysk Hilsen Møøøjn\"}}"));
     }
 
     @Test
@@ -94,7 +107,13 @@ public class GreetingPatchTest extends JerseyTest {
                 .acceptLanguage("son")
                 .get(Response.class);
         assertEquals(200, response.getStatus());
-        assertEquals(entity, response.readEntity(String.class));
+        String msg = response.readEntity(String.class);
+        assertTrue(msg.contains("\"greeting\":\"Mooojn!\","));
+        assertTrue(msg.contains("\"language\":\"Dansk\","));
+        assertTrue(msg.contains("\"country\":\"Danmark\","));
+        assertTrue(msg.contains("\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"}"));
+        assertTrue(msg.contains("\"_links\":{\"self\":{\"href\":"));
+        assertTrue(msg.contains("greetings/moooojn\",\"title\":\"Sønderjysk Hilsen Møøøjn\"}}"));
         EntityTag eTag = response.getEntityTag();
         response = target
                 .request()
@@ -111,26 +130,14 @@ public class GreetingPatchTest extends JerseyTest {
                 .acceptLanguage("son")
                 .get(Response.class);
         assertEquals(200, response.getStatus());
-        assertEquals(entity, response.readEntity(String.class));
+        msg = response.readEntity(String.class);
+        assertFalse(msg.contains("\"language\":\"Synnejysk\","));
     }
 
     @Test
-    public void testUpdateNonExistingGreetingLanguage() {
-        final WebTarget target = target("greetings/itdoesnotexist");
-        Response response = target
-                .request()
-                .acceptLanguage("en")
-                .method("PATCH",
-                        Entity.entity("{\"op\":\"replace\",\"path\":\"language\",\"value\":\"whoCares\"}",
-                                "application/patch+json"),
-                        Response.class);
-        assertEquals(404, response.getStatus());
-    }
-
-    @Test
-    public void testUpdateNonParseablePatch() {
+    public void testUpdateNonParseablePath() {
         final WebTarget target = target("greetings/hallo");
-        Response         response = target
+        Response response = target
                 .request()
                 .accept("application/json")
                 .acceptLanguage("en")
@@ -142,7 +149,28 @@ public class GreetingPatchTest extends JerseyTest {
                 .acceptLanguage("en")
                 .header("If-None-Match", eTag)
                 .method("PATCH",
-                        Entity.entity("{\"operation\":\"someotherop\",\"path\":\"language\",\"value\":\"itisnotgonnahappen\"}",
+                        Entity.entity("{\"op\":\"replace\",\"path\":\"language/nonexisting\",\"value\":\"itisnotgonnahappen\"}",
+                                "application/patch+json"),
+                        Response.class);
+        assertEquals(400, response.getStatus());      
+    }
+
+    @Test
+    public void testUpdateNonParseablePatch() {
+        WebTarget target = target("greetings/hallo");
+        Response response = target
+                .request()
+                .accept("application/json")
+                .acceptLanguage("en")
+                .get(Response.class);
+        assertEquals(200, response.getStatus());
+        EntityTag eTag = response.getEntityTag();
+        response = target
+                .request()
+                .acceptLanguage("en")
+                .header("If-None-Match", eTag)
+                .method("PATCH",
+                        Entity.entity("{\"operation\":\"replace\",\"path\":\"language\",\"value\":\"itisnotgonnahappen\"}",
                                 "application/patch+json"),
                         Response.class);
         assertEquals(400, response.getStatus());
@@ -153,6 +181,12 @@ public class GreetingPatchTest extends JerseyTest {
         final WebTarget target = target("greetings/mooooojn");
         String entity = "{\"greeting\":\"Mooojn!\",\"language\":\"Dansk\",\"country\":\"Danmark\",\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"},\"_links\":{\"self\":{\"href\":\"greetings/mooooojn\",\"title\":\"Sønderjysk Hilsen Møøøjn\"}}}";
         Response response = target
+                .request()
+                .accept("application/json")
+                .acceptLanguage("son")
+                .get(Response.class);
+        assertEquals(404, response.getStatus());
+        response = target
                 .request()
                 .acceptLanguage("son")
                 .method("PUT", Entity.entity(entity, "application/json"), Response.class);
@@ -174,13 +208,20 @@ public class GreetingPatchTest extends JerseyTest {
                                 "application/patch+json"),
                         Response.class);
         assertEquals(400, response.getStatus());
+        assertTrue(response.readEntity(String.class).contains("{\"error\":\"only operation replace is supported\"}"));
     }
 
     @Test
     public void testUpdateExistingOperationNonExistingAttribueGreetingLanguage() {
         final WebTarget target = target("greetings/moooooojn");
-        String entity = "{\"greeting\":\"Mooojn!\",\"language\":\"Dansk\",\"country\":\"Danmark\",\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"},\"_links\":{\"self\":{\"href\":\"greetings/moooooojn\",\"title\":\"Sønderjysk Hilsen Møøøjn\"}}}";
         Response response = target
+                .request()
+                .accept("application/json")
+                .acceptLanguage("son")
+                .get(Response.class);
+        assertEquals(404, response.getStatus());
+        String entity = "{\"greeting\":\"Mooojn!\",\"language\":\"Dansk\",\"country\":\"Danmark\",\"native\":{\"language\":\"Dansk\",\"country\":\"Danmark\"},\"_links\":{\"self\":{\"href\":\"greetings/moooooojn\",\"title\":\"Sønderjysk Hilsen Møøøjn\"}}}";
+        response = target
                 .request()
                 .acceptLanguage("son")
                 .method("PUT", Entity.entity(entity, "application/json"), Response.class);
@@ -209,7 +250,7 @@ public class GreetingPatchTest extends JerseyTest {
                 .acceptLanguage("son")
                 .header("If-None-Match", eTag)
                 .method("PATCH",
-                        Entity.entity("{\"op\":\"replace\",\"path\":\"links/self\",\"value\":\"notReplaced\"}",
+                        Entity.entity("{\"op\":\"replace\",\"path\":\"_links/self\",\"value\":\"notReplaced\"}",
                                 "application/patch+json"),
                         Response.class);
         assertEquals(400, response.getStatus());
@@ -224,4 +265,19 @@ public class GreetingPatchTest extends JerseyTest {
         JSONPatchContainer patchR = mapper.readValue(patch, JSONPatchContainer.class);
         assertEquals(patch, patchR.toString());
     }
+
+    @Test
+    public void testUpdateNonExistingGreetingLanguage() {
+        final WebTarget target = target("greetings/itdoesnotexist");
+        Response response = target
+                .request()
+                .acceptLanguage("en")
+                .method("PATCH",
+                        Entity.entity("{\"op\":\"replace\",\"path\":\"language\",\"value\":\"whoCares\"}",
+                                "application/patch+json"),
+                        Response.class);
+        assertEquals(404, response.getStatus());
+    }
+
 }
+

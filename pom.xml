@@ -25,7 +25,9 @@
     <properties>
         <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <checkstyle.version>7.8.2</checkstyle.version>
+        <com.fasterxml.jackson.version>2.8.4</com.fasterxml.jackson.version>
         <findbugs.version>3.0.4</findbugs.version>
+        <grizzly.version>2.4.2</grizzly.version>
         <jacoco.version>0.7.9</jacoco.version>
         <jdk.version>1.8</jdk.version>
         <jersey.version>2.26</jersey.version>
@@ -39,6 +41,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.info.reportsplugin.version>2.9</project.info.reportsplugin.version>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <slf4j.version>1.7.25</slf4j.version>
+        <swagger.hal.version>1.0.4</swagger.hal.version>
     </properties>
 
     <dependencyManagement>
@@ -50,10 +54,61 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${com.fasterxml.jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
+                <version>${com.fasterxml.jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>18.0</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>3.1.0</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-websockets</artifactId>
+                <version>${grizzly.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>connection-pool</artifactId>
+                <version>${grizzly.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.grizzly</groupId>
+                <artifactId>grizzly-http</artifactId>
+                <version>${grizzly.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>3.22.0-GA</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>io.openapitools.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-hal</artifactId>
+            <version>${swagger.hal.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-moxy</artifactId>
@@ -71,12 +126,6 @@
             <artifactId>jersey-test-framework-provider-bundle</artifactId>
             <type>pom</type>
             <scope>test</scope>
-            <!-- exclusions>
-                <exclusion>
-                    <groupId>junit</groupId>
-                    <artifactId>junit</artifactId>
-                </exclusion>
-            </exclusions -->
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
@@ -92,7 +141,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>2.10.0</version>
+            <version>2.12.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -119,18 +168,23 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>1.7.25</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.8.4</version>
+            <version>${com.fasterxml.jackson.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${com.fasterxml.jackson.version}</version>
         </dependency>
     </dependencies>
 
@@ -204,26 +258,67 @@
                             <mainClass>com.example.service.ServiceExecutor</mainClass>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>api-docs</id>
-                        <phase>package</phase>
-                        <configuration>
-                            <mainClass>com.example.service.api.APIDocsGenerator</mainClass>
-                            <arguments>
-                                <argument>${project.build.directory}/api</argument>
-                                <argument>api-for-${project.name}-${project.version}</argument>           
-                                <argument>${project.name}</argument>           
-                                <argument>${project.version}</argument>           
-                                <argument>Greetings Service</argument>           
-                                <argument>allan.hojgaard.jensen@oracle.com</argument>           
-                                <argument>${project.url}</argument>           
-                                <argument>Service made for educational purposes only</argument>   
-                                <argument>${project.description}</argument>        
-                            </arguments>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>   
+            <plugin>
+                <groupId>io.openapitools.swagger</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.openapitools.hal</groupId>
+                        <artifactId>swagger-hal</artifactId>
+                        <version>${swagger.hal.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>com.example</groupId>
+                        <artifactId>greeting-rest-service</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <resourcePackages>
+                        <resourcePackage>com.example.resource.greeting</resourcePackage>
+                        <resourcePackage>com.example.service</resourcePackage>
+                        <resourcePackage>com.example.service.api</resourcePackage>
+                    </resourcePackages>
+                    <swaggerConfig>
+                        <descriptionFile>
+                            ./description.md
+                        </descriptionFile>
+                        <info>
+                            <title>${project.name}</title>
+                            <version>${project.version}</version>
+                            <termsOfService>
+                                The terms of using the service is as is. The service was developed for educational purposes only https://example.com/services/contracts/greeting-rest-service states the general terms for using this service.
+                                Consumers can create their own individual contract and terms for usage at https://example.com/services/consumers
+                            </termsOfService>
+                            <contact>
+                                <email>contact@example.com</email>
+                                <name>Conrad Tactum </name>
+                                <url>https://example.com</url>
+                            </contact>
+                            <license>
+                                <url>https://example.com/licenses/LICENSE.html</url>
+                                <name>(C) CPPDK 2017</name>
+                            </license>
+                        </info>
+                    </swaggerConfig>
+                    <outputDirectory>${project.build.directory}/openapi</outputDirectory>                    
+                    <outputFormats>
+                        <outputFormat>JSON</outputFormat>
+                        <outputFormat>YAML</outputFormat>
+                    </outputFormats>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
