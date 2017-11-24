@@ -5,11 +5,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.ext.ContextResolver;
 
 import com.example.filter.CORSFilter;
+import com.example.service.patch.OptionsAcceptPatchHeaderFilter;
+import com.example.service.patch.PatchInterceptor;
 import io.swagger.annotations.SwaggerDefinition;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
+import org.glassfish.jersey.moxy.json.MoxyJsonConfig;
 import org.glassfish.jersey.server.ResourceConfig;
 
 /**
@@ -38,10 +42,7 @@ public final class ServiceExecutor {
      * @return Grizzly HTTP server.
      */
     public static HttpServer startServer() {
-        final ResourceConfig rc = new ResourceConfig()
-                .packages("com.example")
-                .register(CORSFilter.class);
-        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
+        return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), create());
     }
 
     /**
@@ -55,6 +56,29 @@ public final class ServiceExecutor {
                 + "%sapplication.wadl%nHit enter to stop it...", BASE_URI));
         System.in.read();
         server.shutdownNow();
+    }
+    
+    public static ResourceConfig create() {
+        final ResourceConfig rc = new ResourceConfig(OptionsAcceptPatchHeaderFilter.class, PatchInterceptor.class)
+                .packages("com.example")
+                .register(CORSFilter.class);
+        rc.register(createMoxyJsonResolver());
+        rc.property("jersey.config.server.tracing.type", "ON_DEMAND");
+        return rc;
+    }
+
+    
+    /**
+     * Create {@link javax.ws.rs.ext.ContextResolver} for {@link org.glassfish.jersey.moxy.json.MoxyJsonConfig}
+     * for this application.
+     *
+     * @return {@code MoxyJsonConfig} context resolver.
+     */
+    public static ContextResolver<MoxyJsonConfig> createMoxyJsonResolver() {
+        final MoxyJsonConfig moxyJsonConfig = new MoxyJsonConfig()
+                .setFormattedOutput(true)
+                .setNamespaceSeparator(':');
+        return moxyJsonConfig.resolver();
     }
 }
 

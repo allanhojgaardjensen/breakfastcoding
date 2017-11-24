@@ -28,7 +28,7 @@
         <findbugs.version>3.0.4</findbugs.version>
         <jacoco.version>0.7.9</jacoco.version>
         <jdk.version>1.8</jdk.version>
-        <jersey.version>2.26-b09</jersey.version>
+        <jersey.version>2.26</jersey.version>
         <junit.version>4.12</junit.version>
         <dependency.locations.enabled>false</dependency.locations.enabled>
         <maven.jxr.version>2.5</maven.jxr.version>
@@ -55,6 +55,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-moxy</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-grizzly2-http</artifactId>
         </dependency>
@@ -63,9 +67,32 @@
             <artifactId>jersey-hk2</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+            <artifactId>jersey-test-framework-provider-bundle</artifactId>
+            <type>pom</type>
+            <scope>test</scope>
+            <!-- exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions -->
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.connectors</groupId>
+            <artifactId>jersey-grizzly-connector</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>2.10.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -1,8 +1,6 @@
 package com.example.service.api;
 
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.swagger.models.Operation;
 import io.swagger.models.Path;
@@ -10,15 +8,11 @@ import io.swagger.models.Response;
 import io.swagger.models.properties.Property;
 import io.swagger.models.properties.StringProperty;
 
-
-
 /**
  * Adds response documentation to an operation in an Open API manner
  */
 public final class ResponseDoc {
     
-    private static final Logger LOGGER = Logger.getLogger(ResponseDoc.class.getName());
-
     private ResponseDoc() {
         // intentionally empty
     }
@@ -93,8 +87,9 @@ public final class ResponseDoc {
         addNoContentResponse204(deleteOperation);
     }
 
-    private static void addPatchStandardResponses(Operation patch) {
-        LOGGER.log(Level.INFO, "Operation was not implemented yet", patch);
+    private static void addPatchStandardResponses(Operation patchOperation) {
+        HeaderDocs.addPatchHeaders(patchOperation);
+        addUnprocessableRequestResponse422(patchOperation);
     }
 
     private static void addOKResponse200(Operation operation) {
@@ -320,6 +315,19 @@ public final class ResponseDoc {
         Response response = new Response();
         if (!responses.containsKey(key)) {
             response.description("Content-Type not supported by Resource");
+        } else {
+            response = operation.getResponses().get(key);
+        }
+        addLogTokenResponseHeader(response);
+        operation.addResponse(key, response);
+    }
+
+    private static void addUnprocessableRequestResponse422(Operation operation) {
+        String key = "422";
+        Map<String, Response> responses = operation.getResponses();
+        Response response = new Response();
+        if (!responses.containsKey(key)) {
+            response.description("Unprocessable Request - illegal modification of resource");
         } else {
             response = operation.getResponses().get(key);
         }

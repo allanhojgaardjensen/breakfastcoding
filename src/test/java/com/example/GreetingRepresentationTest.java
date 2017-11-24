@@ -1,11 +1,13 @@
 package com.example;
 
+import java.io.IOException;
+
 import com.example.resource.greeting.GreetingRepresentation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class GreetingRepresentationTest {
 

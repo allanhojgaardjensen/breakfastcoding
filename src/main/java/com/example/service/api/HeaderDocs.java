@@ -21,6 +21,10 @@ public final class HeaderDocs {
         addClientVersionHeader(operation);
     }
 
+    public static void addPatchHeaders(Operation operation) {
+        addAcceptPatchHeder(operation);
+        addContentTypeHeader(operation);
+    }
     /**
      *
      * The pattern here could be removed as this would open for any type of support in the service and that would be a better
@@ -94,6 +98,40 @@ public final class HeaderDocs {
             clientVersion.setPattern(pattern);
             clientVersion.setDescription(description);
             operation.addParameter(clientVersion);
+        } else {
+            complementHeaderInformation(operation, header, description, pattern, true);
+        }
+    }
+
+    private static void addAcceptPatchHeder(Operation operation) {
+        String header = "Accept-Patch";
+        String description = "A an explicit header for the accept of Patch Verb.";
+        String pattern = "^application/patch+json";
+        if (headerDoesNotExist(operation, header)) {
+            Parameter acceptPatch = new com.example.service.api.HeaderParameter();
+            acceptPatch.setIn("header");
+            acceptPatch.setRequired(true);
+            acceptPatch.setName(header);
+            acceptPatch.setPattern(pattern);
+            acceptPatch.setDescription(description);
+            operation.addParameter(acceptPatch);
+        } else {
+            complementHeaderInformation(operation, header, description, pattern, true);
+        }
+    }
+
+    private static void addContentTypeHeader(Operation operation) {
+        String header = "Content-Type";
+        String description = "A an explicit header for the body json.";
+        String pattern = "^application/patch+json";
+        if (headerDoesNotExist(operation, header)) {
+            Parameter acceptPatch = new com.example.service.api.HeaderParameter();
+            acceptPatch.setIn("header");
+            acceptPatch.setRequired(true);
+            acceptPatch.setName(header);
+            acceptPatch.setPattern(pattern);
+            acceptPatch.setDescription(description);
+            operation.addParameter(acceptPatch);
         } else {
             complementHeaderInformation(operation, header, description, pattern, true);
         }

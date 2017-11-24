@@ -23,34 +23,34 @@ and find page 23 where the description of the first feature can be found.
 
 ### Findings from the implementation of the previous feature
 
-The service has been cleaned from the early parts and the first of the greetings
-version has been taken out of support.
+The service is a little cleaner as the earlier greetings was taken out of support.
 
-We see that a response from a DELETE greeting returns a 204 no content in the event 
-of a successful delete and if you try to delete again it returns a 404 not found. 
-This is probably the best way to see idempotency in action, PUT, DELETE are 
-idempotent verbs. POST is not and may have side effects, whereas GET should never 
-have side effects.
-If you look at code right now it seems like the “infrastructural parts” are 
-occupying a significant amount of the lines of code in the service and this does 
-not have to be that way. There are ways to remove that into libraries and depend 
-on these and in that way reduce the footprint inside the individual service.
+We see that it is possible to partially update an object and get a 200 ok 
+response as well as the 400 and 409 from a PATCH verb. 
+The current implementation is a very simple edition of parts of the RFC6902 only 
+supporting  replace and doing that for non-array objects. PATCH is usually only 
+used when objects are humongous and not for objects of this size. There is still 
+quite a lot of discussion around the actual path PATCH implementations should take, 
+I have used the content-type ”application/patch+json” and not 
+”application/json-patch+json” as this is not strictly following or complete the 
+RFC. PATCH is not idempotent and safe as we saw for e.g. PUT.
 
-It is included here to have “everything” within reach in this simple example 
-service.
+Concerning the implementation, I chose to return 200 and return a status, 
+instead of 204 No Content, the return code 422 is not included in the implementation
+as I did not think such a situation could be included in a decent way in the current
+implementation problem domain. The use of "application/patch+json" is used to signal
+clearly that this is a very limited implementation only supporting the replace operation
+from PATCH.
 
-#### Lessons learned
-A service with better semantics seems to emerge. It it still doubtful whether 
-the semantics of having “multiple language dependent instances” under the same 
-resource, this starts to get more confusing and that needs to be addressed going 
-forward. Probably country needs to be a separate resource and the greetings may 
-be explicitly made having an e.g. English greeting link to one or more countries 
-and languages where the greeting gradually becomes a simpler object and deals 
-with the meaning of the greeting and not with the whole on a superficial level 
-as now. On the other hand is this too much to do for a simple service like the 
-greeting service? 
+It is my hope that it will bring value anyway.
 
-### The Feature "Partial Update existing Greetings" - see slides page 83+
+
+### The Feature "Maturing for the coming features " 
+The coming features are "Separating the Country from greetings" page 91 in the slides
+And creating a dedicated country service" page 93 in the slides. The breakfast coding
+session did not include example code for that. This might turn up in the future if
+the project is maintained and continued. Or you are welcome to add to the latest version
+of the code here and make it more useful for people.
 
 Partially updating an object could be done using PATCH /greetings/{greeting}, e.g.
 
@@ -173,7 +173,7 @@ To test the REST service use e.g. Postman:
 To test the REST service greeting in English:
 
     GET http://localhost:8080/greetings/hallo
-    having set Accept-Language "da" and
+    having set Accept-Language "en" and
     having set Acccept "application/hal+json" 
         or set to "application/hal+json;concept=greeting" 
         or set to "application/hal+json;concept=greeting;v=3"
@@ -204,11 +204,109 @@ To test the REST service greeting in English:
                 }
             }
 
+To directly patch a greeting
+
+    PATCH http://localhost:8080/greetings/mojn
+    having set Accept-Language "en" and
+    having set Accept "application/json"
+    having set Accept-Patch "application/patch+json"
+    having set If-None-Match "{correct hash}"
+    having set Content-Type "application/patch+json"
+    and request body set to:
+        {
+         "op":"replace",
+         "path":"language",
+         "value":"Patched Language"
+        }
+ 
+   and get a response 200 back with
+
+    - Headers:
+        access-control-allow-headers: 
+            Content-Type, 
+            Authorization, 
+            If-Match, 
+            If-None-Match, 
+            X-Log-Token, 
+            X-Client-Version, 
+            X-Client-ID, 
+            X-Service-Generation, 
+            X-Requested-With
+
+        access-control-allow-methods: GET, POST, DELETE, PUT, PATCH, OPTIONS, HEAD
+        access-control-allow-origin: *
+        access-control-expose-headers: 
+            Location, 
+            Retry-After,    
+            Content-Encoding, 
+            ETag, 
+            X-Log-Token,
+            X-Status, 
+            X-RateLimit-Limit, 
+            X-RateLimit-Limit24h, 
+            X-RateLimit-Remaining, 
+            X-RateLimit-Reset
+        content-length: 30
+        location: http://localhost:8080/greetings/mojn
+        X-Log-Token: {some UUID}
+
+    - Body:
+        {"status":"value is replaced"}
+
+
+
+    PATCH http://localhost:8080/greetings/mojn
+    having set Accept-Language "en" and
+    having set Accept "application/json"
+    having set Accept-Patch "application/patch+json"
+    having set If-None-Match "{correct hash}"
+    having set Content-Type "application/patch+json"
+    and request body set to:
+        {
+         "op":"replace",
+         "path":"links/self/title",
+         "value":"Patched Title"
+        }
+
+  and get a response 200 back with
+
+    - Headers:
+        access-control-allow-headers: 
+            Content-Type, 
+            Authorization, 
+            If-Match, 
+            If-None-Match, 
+            X-Log-Token, 
+            X-Client-Version, 
+            X-Client-ID, 
+            X-Service-Generation, 
+            X-Requested-With
+
+        access-control-allow-methods: GET, POST, DELETE, PUT, PATCH, OPTIONS, HEAD
+        access-control-allow-origin: *
+        access-control-expose-headers: 
+            Location, 
+            Retry-After,    
+            Content-Encoding, 
+            ETag, 
+            X-Log-Token,
+            X-Status, 
+            X-RateLimit-Limit, 
+            X-RateLimit-Limit24h, 
+            X-RateLimit-Remaining, 
+            X-RateLimit-Reset
+        content-length: 30
+        content-type: 
+        location: http://localhost:8080/greetings/mojn
+        X-Log-Token: {some UUID}
+
+    - Body:
+        {"status":"value is replaced"}
+
 To directly delete a greeting
 
     DELETE http://localhost:8080/greetings/mojn
-    having set Accept-Language "en"
-
+    having set Accept-Language "en" and
 
 To directly create a greeting
 
@@ -262,7 +360,7 @@ To directly create a greeting
             X-RateLimit-Reset
         content-length: 0
         location: http://localhost:8080/greetings/mojn
-        X-Log-Token: some UUID 
+        X-Log-Token: {some UUID}
 
     - Body:
         (empty)
@@ -319,7 +417,7 @@ To create a greeting
             X-RateLimit-Reset
         content-length: 0
         location: http://localhost:8080/greetings/ohoj
-        X-Log-Token: some UUID 
+        X-Log-Token: {some UUID} 
 
     - Body:
         (empty)
@@ -359,7 +457,7 @@ To get the list of greetings (if you created your own greetings they will be in 
             X-RateLimit-Reset
         content-length: 430
         content-type: application/hal+json;concept=greetings;v=1
-        X-Log-Token: some UUID 
+        X-Log-Token: {some UUID} 
 
     - Body:
             {
