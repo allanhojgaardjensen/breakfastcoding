@@ -1,4 +1,5 @@
 # Build the demo using the Wercker Maven step.
+box: debian
 
 # the initial pipeline
 build:
