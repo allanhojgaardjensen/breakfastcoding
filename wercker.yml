@@ -11,5 +11,5 @@ build:
   box: maven:3.5-jdk-8
   steps:
     - java/maven:
-      goals: clean compile
+      goals: clean package
       cache_repo: true  
