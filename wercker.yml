@@ -10,10 +10,6 @@ init:
 build:
   box: maven:3.5-jdk-8
   steps:
-    - script:
-      name: Install pre-reqs
-      code: |
-        yum -y install tar gzip
     - java/maven:
       goals: clean compile
       cache_repo: true  
