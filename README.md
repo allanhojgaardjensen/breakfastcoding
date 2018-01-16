@@ -2,6 +2,8 @@
 
  [![status](https://travis-ci.org/allanhojgaardjensen/breakfastcoding.svg?branch=master)](https://travis-ci.org/allanhojgaardjensen/breakfastcoding) 
  [![coverage](https://codecov.io/gh/allanhojgaardjensen/breakfastcoding/coverage.svg?branch=master)](https://codecov.io/gh/allanhojgaardjensen/breakfastcoding)
+  [![wercker](https://app.wercker.com/status/427a4ef16fd2e665e8ed4eb1462744e3/s/master "wercker status")](https://app.wercker.com/project/byKey/427a4ef16fd2e665e8ed4eb1462744e3)
+
 
 This is an example of a REST service, which starts in a non-optimal way and then 
 during a series of changes evolves and starts being able to handle versions 
