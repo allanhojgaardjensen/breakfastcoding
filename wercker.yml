@@ -7,7 +7,7 @@ init:
       code: |
         echo "God Morning!"
         echo "Want some Breakfast?"
-compile:
+build:
   box: maven:3.5-jdk-8
   steps:
     - script:
