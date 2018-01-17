@@ -1,0 +1,15 @@
+# Build the demo using the Wercker Maven step.
+init:
+  box: debian
+  steps:
+    - script:
+      name: Build
+      code: |
+        echo "God Morning!"
+        echo "Want some Breakfast?"
+build:
+  box: maven:3.5-jdk-8
+  steps:
+    - java/maven:
+      goals: clean verify
+      cache_repo: true  
