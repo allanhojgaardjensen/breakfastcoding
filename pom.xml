@@ -25,7 +25,7 @@
     <properties>
         <checkstyle.plugin.version>2.17</checkstyle.plugin.version>
         <checkstyle.version>7.8.2</checkstyle.version>
-        <com.fasterxml.jackson.version>2.8.4</com.fasterxml.jackson.version>
+        <com.fasterxml.jackson.version>2.9.8</com.fasterxml.jackson.version>
         <findbugs.version>3.0.4</findbugs.version>
         <grizzly.version>2.4.2</grizzly.version>
         <jacoco.version>0.7.9</jacoco.version>
@@ -34,7 +34,7 @@
         <junit.version>4.12</junit.version>
         <dependency.locations.enabled>false</dependency.locations.enabled>
         <maven.jxr.version>2.5</maven.jxr.version>
-        <open.api.2.version>1.5.12</open.api.2.version>
+        <open.api.2.jaxrs.version>1.5.12</open.api.2.jaxrs.version>
         <open.api.plugin.version>1.0.0</open.api.plugin.version>
         <pmd.plugin.version>3.8</pmd.plugin.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -43,6 +43,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <slf4j.version>1.7.25</slf4j.version>
         <swagger.hal.version>1.0.4</swagger.hal.version>
+        <open.api.2.version>1.5.21</open.api.2.version>
     </properties>
 
     <dependencyManagement>
@@ -67,7 +68,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>18.0</version>
+                <version>23.0</version>
             </dependency>
             <dependency>
                 <groupId>javax.servlet</groupId>
@@ -157,7 +158,7 @@
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-jersey2-jaxrs</artifactId>
-            <version>${open.api.2.version}</version>
+            <version>${open.api.2.jaxrs.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
