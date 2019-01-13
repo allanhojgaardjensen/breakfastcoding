@@ -1,5 +1,5 @@
 language: java
-script: mvn clean verify
+script: mvn -X clean verify -Djava.net.preferIPv4Stack=true
 jdk:
   - oraclejdk8
 before_install:
