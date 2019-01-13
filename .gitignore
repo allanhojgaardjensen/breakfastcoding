@@ -1,6 +1,7 @@
 /target/
 .classpath
 .settings
+.wercker
 .project
 .idea
 *.iml
