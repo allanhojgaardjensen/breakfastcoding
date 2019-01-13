@@ -2,5 +2,7 @@
 .classpath
 .settings
 .project
+.idea
+*.iml
 nb-configuration.xml
 dependency-reduced-pom.xml
