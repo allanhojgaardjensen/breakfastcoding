@@ -1,6 +1,6 @@
 # Build the demo using the Wercker Maven step.
 init:
-  box: ubuntu 
+  box: ubuntu
   steps:
     - script:
       name: Build
@@ -8,9 +8,8 @@ init:
         echo "God Morning!"
         echo "Want some Breakfast?"
 build:
-  box: maven:3.5-jdk-8
+  box: maven:3.5.2-jdk-8
   steps:
     - wercker/maven:
       goals: clean verify
-      version: 3.5.0
       cache_repo: true
