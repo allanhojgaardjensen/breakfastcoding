@@ -1,6 +1,6 @@
 # Build the demo using the Wercker Maven step.
 init:
-  box: debian
+  box: ubuntu 
   steps:
     - script:
       name: Build
@@ -12,4 +12,5 @@ build:
   steps:
     - wercker/maven:
       goals: clean verify
-      cache_repo: true  
+      version: 3.5.0
+      cache_repo: true
